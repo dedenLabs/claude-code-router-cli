@@ -10,6 +10,8 @@ import { opendir, stat } from "fs/promises";
 import { join } from "path";
 import { CLAUDE_PROJECTS_DIR, HOME_DIR } from "../constants";
 import { LRUCache } from "lru-cache";
+import { UnifiedRouter, migrateLegacyConfig } from "./unified-router";
+import { LegacyRouterConfig, UnifiedRouterConfig } from "../types/router";
 
 const enc = get_encoding("cl100k_base");
 
@@ -112,6 +114,34 @@ const getUseModel = async (
   const projectSpecificRouter = await getProjectSpecificRouter(req);
   const Router = projectSpecificRouter || config.Router;
 
+  // 检查是否使用统一路由引擎
+  if (Router.engine === 'unified') {
+    // 如果还没有创建统一路由实例，则创建一个
+    if (!config._unifiedRouterInstance) {
+      config._unifiedRouterInstance = new UnifiedRouter(Router as UnifiedRouterConfig);
+    }
+
+    // 使用统一路由引擎进行路由
+    const routeResult = await config._unifiedRouterInstance.evaluate(req, tokenCount, config, lastUsage);
+
+    // 处理子代理模型的特殊清理
+    if (req.body?.system?.length > 1 &&
+      req.body?.system[1]?.text?.includes("<CCR-SUBAGENT-MODEL>")) {
+      const model = req.body?.system[1].text.match(
+        /<CCR-SUBAGENT-MODEL>(.*?)<\/CCR-SUBAGENT-MODEL>/s
+      );
+      if (model) {
+        req.body.system[1].text = req.body.system[1].text.replace(
+          `<CCR-SUBAGENT-MODEL>${model[1]}</CCR-SUBAGENT-MODEL>`,
+          ""
+        );
+      }
+    }
+
+    return routeResult.route;
+  }
+
+  // 兼容旧版路由逻辑
   if (req.body.model.includes(",")) {
     const [provider, model] = req.body.model.split(",");
     const finalProvider = config.Providers.find(
@@ -181,6 +211,7 @@ const getUseModel = async (
 
 export const router = async (req: any, _res: any, context: any) => {
   const { config, event } = context;
+  // console.log(`req.body.model:`, req?.body?.model);
   // Parse sessionId from metadata.user_id
   if (req.body.metadata?.user_id) {
     const parts = req.body.metadata.user_id.split("_session_");
@@ -223,8 +254,11 @@ export const router = async (req: any, _res: any, context: any) => {
     }
     req.body.model = model;
   } catch (error: any) {
-    req.log.error(`Error in router middleware: ${error.message}`);
-    req.body.model = config.Router!.default;
+    req.log.error(`Error in router middleware: ${error.message}`, { stack: error.stack });
+    // 尝试使用统一路由的defaultRoute，否则使用旧版的default
+    const fallbackModel = config.Router!.defaultRoute || config.Router!.default || 'openrouter,claude-3.5-sonnet';
+    req.log.error(`Using fallback model: ${fallbackModel}`);
+    req.body.model = fallbackModel;
   }
   return;
 };

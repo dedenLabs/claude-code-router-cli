@@ -1,0 +1,171 @@
+{
+  "LOG": true,
+  "HOST": "127.0.0.1",
+  "PORT": 8080,
+  "APIKEY": "1",
+  "API_TIMEOUT_MS": 600000,
+  "Providers": [
+    {
+      "name": "openrouter",
+      "api_base_url": "https://openrouter.ai/api/v1/chat/completions",
+      "api_key": "sk-or-v1-",
+      "models": [
+        "anthropic/claude-3.5-sonnet",
+        "anthropic/claude-3.7-sonnet:thinking",
+        "deepseek/deepseek-chat-v3-0324",
+        "@preset/kimi"
+      ],
+      "transformer": {
+        "use": ["openrouter"],
+        "deepseek/deepseek-chat-v3-0324": {
+          "use": ["tooluse"]
+        }
+      }
+    },
+    {
+      "name": "deepseek",
+      "api_base_url": "https://api.deepseek.com/chat/completions",
+      "api_key": "sk-",
+      "models": [
+        "deepseek-chat",
+        "deepseek-reasoner"
+      ],
+      "transformer": {
+        "use": ["deepseek"],
+        "deepseek-chat": {
+          "use": ["tooluse"]
+        }
+      }
+    },
+    {
+      "name": "gemini",
+      "api_base_url": "https://generativelanguage.googleapis.com/v1beta/models/",
+      "api_key": "",
+      "models": [
+        "gemini-2.5-flash",
+        "gemini-2.5-pro"
+      ],
+      "transformer": {
+        "use": ["gemini"]
+      }
+    }
+  ],
+  "Router": {
+    "engine": "unified",
+    "defaultRoute": "openrouter,anthropic/claude-3.5-sonnet",
+    "rules": [
+      {
+        "name": "longContext",
+        "priority": 100,
+        "enabled": true,
+        "condition": {
+          "type": "tokenThreshold",
+          "value": 60000,
+          "operator": "gt"
+        },
+        "action": {
+          "route": "gemini,gemini-2.5-pro",
+          "transformers": []
+        }
+      },
+      {
+        "name": "subagent",
+        "priority": 90,
+        "enabled": true,
+        "condition": {
+          "type": "fieldExists",
+          "field": "system.1.text",
+          "operator": "exists"
+        },
+        "action": {
+          "route": "${subagent}",
+          "transformers": []
+        }
+      },
+      {
+        "name": "background",
+        "priority": 80,
+        "enabled": true,
+        "condition": {
+          "type": "modelContains",
+          "value": "haiku",
+          "operator": "contains"
+        },
+        "action": {
+          "route": "openrouter,@preset/kimi",
+          "transformers": []
+        }
+      },
+      {
+        "name": "webSearch",
+        "priority": 70,
+        "enabled": true,
+        "condition": {
+          "type": "toolExists",
+          "value": "web_search",
+          "operator": "exists"
+        },
+        "action": {
+          "route": "gemini,gemini-2.5-flash",
+          "transformers": []
+        }
+      },
+      {
+        "name": "thinking",
+        "priority": 60,
+        "enabled": true,
+        "condition": {
+          "type": "fieldExists",
+          "field": "thinking",
+          "operator": "exists"
+        },
+        "action": {
+          "route": "deepseek,deepseek-reasoner",
+          "transformers": []
+        }
+      },
+      {
+        "name": "directMapping",
+        "priority": 50,
+        "enabled": true,
+        "condition": {
+          "type": "custom",
+          "customFunction": "directModelMapping"
+        },
+        "action": {
+          "route": "${mappedModel}",
+          "transformers": []
+        }
+      },
+      {
+        "name": "userSpecified",
+        "priority": 40,
+        "enabled": true,
+        "condition": {
+          "type": "custom",
+          "customFunction": "modelContainsComma"
+        },
+        "action": {
+          "route": "${userModel}",
+          "transformers": []
+        }
+      }
+    ],
+    "cache": {
+      "enabled": true,
+      "maxSize": 1000,
+      "ttl": 300000
+    },
+    "debug": {
+      "enabled": false,
+      "logLevel": "info",
+      "logToFile": true,
+      "logToConsole": true
+    },
+    "contextThreshold": {
+      "default": 1000,
+      "longContext": 60000
+    }
+  },
+  "NON_INTERACTIVE_MODE": false
+}

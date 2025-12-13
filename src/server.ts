@@ -2,18 +2,23 @@ import Server from "@musistudio/llms";
 import { readConfigFile, writeConfigFile, backupConfigFile } from "./utils";
 import { checkForUpdates, performUpdate } from "./utils";
 import { join } from "path";
-import fastifyStatic from "@fastify/static";
-import { readdirSync, statSync, readFileSync, writeFileSync, existsSync } from "fs";
+import {
+  readdirSync,
+  statSync,
+  readFileSync,
+  writeFileSync,
+  existsSync,
+} from "fs";
 import { homedir } from "os";
-import {calculateTokenCount} from "./utils/router";
+import { calculateTokenCount } from "./utils/router";
 
 export const createServer = (config: any): Server => {
   const server = new Server(config);
 
   server.app.post("/v1/messages/count_tokens", async (req, reply) => {
-    const {messages, tools, system} = req.body;
+    const { messages, tools, system } = req.body;
     const tokenCount = calculateTokenCount(messages, system, tools);
-    return { "input_tokens": tokenCount }
+    return { input_tokens: tokenCount };
   });
 
   // Add endpoint to read config.json with access control
@@ -28,7 +33,7 @@ export const createServer = (config: any): Server => {
       ([name, transformer]: any) => ({
         name,
         endpoint: transformer.endPoint || null,
-      })
+      }),
     );
     return { transformers: transformerList };
   });
@@ -61,29 +66,18 @@ export const createServer = (config: any): Server => {
     }, 1000);
   });
 
-  // Register static file serving with caching
-  server.app.register(fastifyStatic, {
-    root: join(__dirname, "..", "dist"),
-    prefix: "/ui/",
-    maxAge: "1h",
-  });
-
-  // Redirect /ui to /ui/ for proper static file serving
-  server.app.get("/ui", async (_, reply) => {
-    return reply.redirect("/ui/");
-  });
-
   // 版本检查端点
   server.app.get("/api/update/check", async (req, reply) => {
     try {
       // 获取当前版本
       const currentVersion = require("../package.json").version;
-      const { hasUpdate, latestVersion, changelog } = await checkForUpdates(currentVersion);
+      const { hasUpdate, latestVersion, changelog } =
+        await checkForUpdates(currentVersion);
 
       return {
         hasUpdate,
         latestVersion: hasUpdate ? latestVersion : undefined,
-        changelog: hasUpdate ? changelog : undefined
+        changelog: hasUpdate ? changelog : undefined,
       };
     } catch (error) {
       console.error("Failed to check for updates:", error);
@@ -115,13 +109,18 @@ export const createServer = (config: any): Server => {
   server.app.get("/api/logs/files", async (req, reply) => {
     try {
       const logDir = join(homedir(), ".claude-code-router", "logs");
-      const logFiles: Array<{ name: string; path: string; size: number; lastModified: string }> = [];
+      const logFiles: Array<{
+        name: string;
+        path: string;
+        size: number;
+        lastModified: string;
+      }> = [];
 
       if (existsSync(logDir)) {
         const files = readdirSync(logDir);
 
         for (const file of files) {
-          if (file.endsWith('.log')) {
+          if (file.endsWith(".log")) {
             const filePath = join(logDir, file);
             const stats = statSync(filePath);
 
@@ -129,13 +128,17 @@ export const createServer = (config: any): Server => {
               name: file,
               path: filePath,
               size: stats.size,
-              lastModified: stats.mtime.toISOString()
+              lastModified: stats.mtime.toISOString(),
             });
           }
         }
 
         // 按修改时间倒序排列
-        logFiles.sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime());
+        logFiles.sort(
+          (a, b) =>
+            new Date(b.lastModified).getTime() -
+            new Date(a.lastModified).getTime(),
+        );
       }
 
       return logFiles;
@@ -163,8 +166,8 @@ export const createServer = (config: any): Server => {
         return [];
       }
 
-      const logContent = readFileSync(logFilePath, 'utf8');
-      const logLines = logContent.split('\n').filter(line => line.trim())
+      const logContent = readFileSync(logFilePath, "utf8");
+      const logLines = logContent.split("\n").filter((line) => line.trim());
 
       return logLines;
     } catch (error) {
@@ -188,7 +191,7 @@ export const createServer = (config: any): Server => {
       }
 
       if (existsSync(logFilePath)) {
-        writeFileSync(logFilePath, '', 'utf8');
+        writeFileSync(logFilePath, "", "utf8");
       }
 
       return { success: true, message: "Logs cleared successfully" };
