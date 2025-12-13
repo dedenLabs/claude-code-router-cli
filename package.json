@@ -1,7 +1,7 @@
 {
   "name": "@dedenlabs/claude-code-router-cli",
   "version": "2.0.0",
-  "description": "Enhanced CLI-only Claude Code Router based on @musistudio/claude-code-router with unified routing engine and external rule support",
+  "description": "基于@musistudio/claude-code-router的增强版CLI路由工具 - 支持统一路由引擎、外部规则加载、智能日志系统、自动配置迁移和GLM思考模式",
   "bin": {
     "ccr": "dist/cli.js"
   },
