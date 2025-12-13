@@ -1,33 +1,43 @@
 {
-  "name": "@musistudio/claude-code-router",
-  "version": "1.0.71",
-  "description": "Use Claude Code without an Anthropics account and route it to another LLM provider",
+  "name": "@dedenlabs/claude-code-router-cli",
+  "version": "2.0.0",
+  "description": "Enhanced CLI-only Claude Code Router based on @musistudio/claude-code-router with unified routing engine and external rule support",
   "bin": {
     "ccr": "dist/cli.js"
   },
   "scripts": {
     "build": "node scripts/build.js",
-    "release": "npm run build && npm publish"
+    "release": "npm run build && npm publish",
+    "prepublishOnly": "node scripts/prepublish-check.js"
   },
   "keywords": [
     "claude",
     "code",
     "router",
     "llm",
-    "anthropic"
+    "anthropic",
+    "cli",
+    "unified",
+    "external-rules"
   ],
-  "author": "musistudio",
+  "author": "dedenlabs <deden.labs@gmail.com> (Original by musistudio)",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dedenlabs/claude-code-router-cli"
+  },
+  "bugs": {
+    "url": "https://github.com/dedenlabs/claude-code-router-cli/issues"
+  },
+  "homepage": "https://github.com/dedenlabs/claude-code-router-cli#readme",
   "dependencies": {
-    "@fastify/static": "^8.2.0",
-    "@musistudio/llms": "^1.0.45",
     "@inquirer/prompts": "^5.0.0",
+    "@musistudio/llms": "^1.0.48",
     "dotenv": "^16.4.7",
     "find-process": "^2.0.0",
     "json5": "^2.2.3",
     "lru-cache": "^11.2.2",
     "minimist": "^1.2.8",
-    "openurl": "^1.1.1",
     "rotating-file-stream": "^3.2.7",
     "shell-quote": "^1.8.3",
     "tiktoken": "^1.0.21",

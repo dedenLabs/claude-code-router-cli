@@ -91,27 +91,23 @@ export const readConfigFile = async () => {
         const backupPath = await backupConfigFile();
         if (backupPath) {
           console.log(
-              `Backed up existing configuration file to ${backupPath}`
+            `Backed up existing configuration file to ${backupPath}`
           );
         }
-        const config = {
-          PORT: 3456,
-          Providers: [],
-          Router: {},
-        }
+        const config = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
         // Create a minimal default config file
         await writeConfigFile(config);
         console.log(
-            "Created minimal default configuration file at ~/.claude-code-router/config.json"
+          "Created minimal default configuration file at ~/.claude-code-router/config.json"
         );
         console.log(
-            "Please edit this file with your actual configuration."
+          "Please edit this file with your actual configuration."
         );
         return config
       } catch (error: any) {
         console.error(
-            "Failed to create default configuration:",
-            error.message
+          "Failed to create default configuration:",
+          error.message
         );
         process.exit(1);
       }

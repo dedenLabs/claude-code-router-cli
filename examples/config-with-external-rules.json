@@ -1,0 +1,82 @@
+{
+  "engine": "unified",
+  "defaultRoute": "gpt-4,openai",
+  "rules": [
+    {
+      "name": "userPreferenceRouting",
+      "priority": 100,
+      "enabled": true,
+      "condition": {
+        "type": "externalFunction",
+        "externalFunction": {
+          "path": "./external-rules/user-preference.js",
+          "functionName": "checkUserPreference"
+        }
+      },
+      "action": {
+        "route": "gpt-4,openai"
+      }
+    },
+    {
+      "name": "timeBasedRouting",
+      "priority": 90,
+      "enabled": true,
+      "condition": {
+        "type": "externalFunction",
+        "externalFunction": {
+          "path": "./external-rules/time-based.js",
+          "functionName": "isBusinessHours"
+        }
+      },
+      "action": {
+        "route": "claude-3-opus,anthropic"
+      }
+    },
+    {
+      "name": "peakHoursRouting",
+      "priority": 85,
+      "enabled": true,
+      "condition": {
+        "type": "externalFunction",
+        "externalFunction": {
+          "path": "./external-rules/time-based.js",
+          "functionName": "isPeakHours"
+        }
+      },
+      "action": {
+        "route": "gemini-pro,google"
+      }
+    },
+    {
+      "name": "complexRouting",
+      "priority": 80,
+      "enabled": true,
+      "condition": {
+        "type": "externalFunction",
+        "externalFunction": {
+          "path": "./external-rules/complex-routing.js",
+          "functionName": "evaluateComplexCondition"
+        }
+      },
+      "action": {
+        "route": "claude-3-sonnet,anthropic"
+      }
+    }
+  ],
+  "cache": {
+    "enabled": true,
+    "maxSize": 1000,
+    "ttl": 300000
+  },
+  "debug": {
+    "enabled": true,
+    "logLevel": "debug",
+    "logToFile": true,
+    "logToConsole": true,
+    "logDir": "./logs"
+  },
+  "contextThreshold": {
+    "default": 1000,
+    "longContext": 60000
+  }
+}
