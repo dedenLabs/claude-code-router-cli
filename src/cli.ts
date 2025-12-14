@@ -20,10 +20,10 @@ import { migrateConfigCLI } from "./utils/migrate-config";
 const command = process.argv[2];
 
 const HELP_TEXT = `
-Usage: ccr [command]
+Usage: ccr [command] [options]
 
 Commands:
-  start         Start server
+  start         Start server (default: foreground mode)
   stop          Stop server
   restart       Restart server
   status        Show server status
@@ -35,8 +35,13 @@ Commands:
   -v, version   Show version information
   -h, help      Show help information
 
-Example:
-  ccr start
+Options for 'start' command:
+  -b, --background   Run server in background mode
+  -d, --daemon       Alias for --background
+
+Examples:
+  ccr start               # Start server in foreground mode
+  ccr start --background  # Start server in background mode
   ccr code "Write a Hello World"
   ccr model
   eval "$(ccr activate)"  # Set environment variables globally
@@ -67,7 +72,27 @@ async function main() {
   const isRunning = await isServiceRunning();
   switch (command) {
     case "start":
-      run();
+      {
+        // Parse arguments for start command
+        const args = process.argv.slice(3);
+        const hasBackgroundFlag = args.includes('--background') || args.includes('-b') || args.includes('--daemon') || args.includes('-d');
+
+        if (hasBackgroundFlag) {
+          // Start in background mode
+          const cliPath = join(__dirname, "cli.js");
+          spawn("node", [cliPath, "start", "--internal-bg"], {
+            detached: true,
+            stdio: "ignore",
+          }).unref();
+
+          console.log("✅ Service started successfully in the background.");
+          console.log("   Use 'ccr status' to check service status");
+          console.log("   Use 'ccr stop' to stop the service");
+        } else {
+          // Start in foreground mode (default)
+          run();
+        }
+      }
       break;
     case "stop":
       try {
@@ -129,9 +154,9 @@ async function main() {
         console.log("Service not running, starting service...");
         const cliPath = join(__dirname, "cli.js");
         const startProcess = spawn("node", [cliPath, "start"], {
-          detached: true,
-          stdio: "ignore",
-        });
+            detached: true,
+            stdio: "ignore",
+          });
 
         // let errorMessage = "";
         // startProcess.stderr?.on("data", (data) => {

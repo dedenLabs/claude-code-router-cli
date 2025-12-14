@@ -47,15 +47,18 @@ async function initializeClaudeConfig() {
 
 interface RunOptions {
   port?: number;
+  foreground?: boolean;
 }
 
 async function run(options: RunOptions = {}) {
   // Check if service is already running
   const isRunning = await isServiceRunning()
   if (isRunning) {
-    console.log("✅ Service is already running in the background.");
+    console.log("✅ Service is already running.");
     return;
   }
+
+  const isInternalBackground = process.argv.includes('--internal-bg');
 
   await initializeClaudeConfig();
   await initDir();
@@ -376,8 +379,18 @@ async function run(options: RunOptions = {}) {
     return payload;
   })
 
+  const isForegroundMode = options.foreground || !process.argv.includes('--internal-bg');
 
   server.start();
+
+  if (isForegroundMode) {
+    console.log("\n🚀 Claude Code Router v2.0 is running on http://127.0.0.1:" + servicePort);
+    console.log("   Press Ctrl+C to stop the server\n");
+  } else {
+    // Background mode: don't show console output but keep running
+    // The detached: true in spawn handles detaching from parent
+    // Just exit the function without blocking
+  }
 }
 
 export { run };

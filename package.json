@@ -51,11 +51,14 @@
     "shx": "^0.4.0",
     "typescript": "^5.8.2"
   },
+  "files": [
+    "dist/",
+    "examples/",
+    "LICENSE",
+    "README.md",
+    "tsconfig.json"
+  ],
   "publishConfig": {
-    "ignore": [
-      "!build/",
-      "src/",
-      "screenshots/"
-    ]
+    "access": "public"
   }
 }
