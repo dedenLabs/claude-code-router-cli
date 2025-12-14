@@ -28,8 +28,8 @@ if (!packageJson.name.startsWith('@')) {
   process.exit(1);
 }
 
-// 4. 检查版本号
-if (!/^\d+\.\d+\.\d+$/.test(packageJson.version)) {
+// 4. 检查版本号 - 支持正式版本和预发布版本
+if (!/^\d+\.\d+\.\d+(?:-\w+(?:\.\d+)?)?$/.test(packageJson.version)) {
   console.error('❌ 版本号格式不正确');
   process.exit(1);
 }

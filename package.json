@@ -24,7 +24,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/dedenlabs/claude-code-router-cli"
+    "url": "git+https://github.com/dedenlabs/claude-code-router-cli.git"
   },
   "bugs": {
     "url": "https://github.com/dedenlabs/claude-code-router-cli/issues"
