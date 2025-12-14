@@ -2,7 +2,7 @@
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/dedenlabs/claude-code-router-cli)
+[![Version](https://img.shields.io/badge/version-2.0.2-blue.svg)](https://github.com/dedenlabs/claude-code-router-cli)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
@@ -93,7 +93,11 @@ npm install @dedenlabs/claude-code-router-cli
 
 **启动路由服务：**
 ```bash
+# 前台运行
 ccr start
+# 或
+# 后台运行
+ccr start -b
 ```
 
 **配置 Claude 环境变量：**
@@ -183,8 +187,8 @@ ccr stop      # 停止服务
 ```javascript
 // external-rules/user-preference.js
 const userPreferences = {
-  'premium@company.com': { provider: 'opus-minimax', model: 'glm-4.6' },
-  'standard@company.com': { provider: 'sonnet-minimax', model: 'glm-4.5-air' }
+  'premium@company.com': { provider: 'opus', model: 'glm-4.6' },
+  'standard@company.com': { provider: 'sonnet', model: 'glm-4.5-air' }
 };
 
 function checkUserPreference(context) {
@@ -444,6 +448,8 @@ lsof -i :3456
 
 # 更换端口
 ccr start --port 3457
+# 后台运行
+ccr start -b
 ```
 
 **Q: 路由不生效，模型没有切换**
@@ -510,10 +516,7 @@ npm install
 
 # 构建项目
 npm run build
-
-# 运行测试
-npm test
-
+ 
 # 开发模式
 npm run dev
 ```
@@ -562,21 +565,27 @@ export class MyTransformer extends BaseTransformer {
 - 将最常用的规则放在前面（高优先级）
 - 避免复杂的条件判断
 - 合理设置缓存TTL
-
-### 3. 监控建议
-
-```bash
-# 查看性能统计
-ccr stats
-
-# 监控内存使用
-ccr monitor --memory
-
-# 检查规则命中情况
-ccr stats --rules
-```
+ 
 
 ## 📈 版本历史
+
+### v2.0.2 (2025-12-14)
+
+**📚 文档修复**
+
+**✅ README文档更新**
+- 修复版本徽章显示错误（从2.0.0更新为2.0.2）
+- 更新版本历史记录，添加v2.0.1和v2.0.2的详细说明
+- 完善命令行使用示例和文档描述
+
+### v2.0.1 (2025-12-14)
+
+**🎯 用户体验优化**
+
+**✅ 前台模式默认运行**
+- `ccr start` 默认在前台运行，显示详细运行信息
+- 可通过 `--background` / `-b` 参数切换到后台模式
+- 更新命令行帮助文档和使用示例
 
 ### v2.0.0 (2025-12-14)
 
@@ -612,7 +621,7 @@ ccr stats --rules
 - 确保路由决策的准确性和稳定性
 - 提供模拟测试和性能监控工具
 
-### v1.x (旧版本)
+### v1.x (原版本)
 - 基础路由功能
 - 固定规则配置
 
@@ -625,8 +634,7 @@ ccr stats --rules
 | **日志系统** | 基础输出 | ✅ 可视化智能日志 |
 | **配置迁移** | 手动 | ✅ 自动迁移工具 |
 | **思考模式** | 无 | ✅ GLM思考转换器 |
-| **包名** | @musistudio/... | @dedenlabs/... |
-| **文档** | 基础 | ✅ 完整示例和指南 |
+| **包名** | @musistudio/... | @dedenlabs/... | 
 
 ## 📄 许可证
 
@@ -634,16 +642,12 @@ MIT License - 与原版保持一致
 
 ## 🙏 致谢
 
-- **musistudio** - 原版项目作者
-- **社区贡献者** - 测试和反馈
-- **GLM团队** - 提供优质模型支持
+- **musistudio** - 原版项目作者 
 
 ---
 
 <div align="center">
-
-**[⬆ 回到顶部](#claude-code-router-cli-v20)**
-
+ 
 [🐛 报告问题](https://github.com/dedenlabs/claude-code-router-cli/issues) •
 [💡 功能建议](https://github.com/dedenlabs/claude-code-router-cli/issues) •
 [📖 完整文档](./docs/UNIFIED_ROUTER_GUIDE.md)
