@@ -1,0 +1,39 @@
+{
+  "LOG": false,
+  "LOG_LEVEL": "info",
+  "CLAUDE_PATH": "",
+  "HOST": "127.0.0.1",
+  "PORT": 3456,
+  "APIKEY": "sk-anything",
+  "API_TIMEOUT_MS": "600000",
+  "PROXY_URL": "",
+  "Providers": [
+    {
+      "name": "haiku",
+      "api_base_url": "https://api.minimaxi.com/anthropic/v1/messages",
+      "api_key": "YOUR_API_KEY",
+      "models": ["MiniMax-M2"]
+    },
+    {
+      "name": "sonnet",
+      "api_base_url": "https://api.minimaxi.com/anthropic/v1/messages",
+      "api_key": "YOUR_API_KEY",
+      "models": ["MiniMax-M2"]
+    },
+    {
+      "name": "opus",
+      "api_base_url": "https://api.minimaxi.com/anthropic/v1/messages",
+      "api_key": "YOUR_API_KEY",
+      "models": ["MiniMax-M2"]
+    }
+  ],
+  "Router": {
+    "default": "sonnet,MiniMax-M2",
+    "background": "haiku,MiniMax-M2",
+    "think": "opus,MiniMax-M2",
+    "longContext": "sonnet,MiniMax-M2",
+    "longContextThreshold": 60000,
+    "webSearch": "sonnet,MiniMax-M2"
+  },
+  "transformers": []
+}

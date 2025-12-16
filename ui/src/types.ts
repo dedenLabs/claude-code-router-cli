@@ -11,6 +11,7 @@ export interface Provider {
   transformer?: ProviderTransformer;
 }
 
+// 旧版路由配置接口（向后兼容）
 export interface RouterConfig {
     default: string;
     background: string;
@@ -21,6 +22,66 @@ export interface RouterConfig {
     image: string;
     custom?: any;
 }
+
+// 统一路由引擎条件类型
+export interface RouteCondition {
+    type: 'tokenThreshold' | 'modelContains' | 'toolExists' | 'fieldExists' | 'custom' | 'externalFunction';
+    field?: string;
+    value?: any;
+    operator?: 'gt' | 'lt' | 'eq' | 'contains' | 'startsWith' | 'exists';
+    customFunction?: string;
+    externalFunction?: {
+        path: string;
+        functionName?: string;
+    };
+}
+
+// 统一路由引擎动作类型
+export interface RouteAction {
+    route: string;
+    transformers?: string[];
+    metadata?: Record<string, any>;
+    description?: string; // 添加描述字段，支持配置文件中的description
+}
+
+// 统一路由引擎规则类型
+export interface RouteRule {
+    name: string;
+    priority?: number;
+    enabled?: boolean;
+    condition: RouteCondition;
+    action: RouteAction;
+}
+
+// 统一路由引擎配置接口
+export interface UnifiedRouterConfig {
+    engine: 'unified';
+    defaultRoute: string;
+    rules: RouteRule[];
+    cache?: {
+        enabled?: boolean;
+        maxSize?: number;
+        ttl?: number;
+    };
+    debug?: {
+        enabled?: boolean;
+        logLevel?: 'debug' | 'info' | 'warn' | 'error';
+        logToFile?: boolean;
+        logToConsole?: boolean;
+        logDir?: string;
+    };
+    contextThreshold?: {
+        default?: number;
+        longContext?: number;
+    };
+    migration?: {
+        autoMigrate?: boolean;
+        keepLegacy?: boolean;
+    };
+}
+
+// 支持新旧格式的路由配置联合类型
+export type AnyRouterConfig = RouterConfig | UnifiedRouterConfig;
 
 export interface Transformer {
     name?: string;
@@ -51,7 +112,7 @@ export interface StatusLineConfig {
 
 export interface Config {
   Providers: Provider[];
-  Router: RouterConfig;
+  Router: AnyRouterConfig; // 支持新旧格式
   transformers: Transformer[];
   StatusLine?: StatusLineConfig;
   forceUseImageAgent?: boolean;

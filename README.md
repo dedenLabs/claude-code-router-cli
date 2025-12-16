@@ -2,14 +2,14 @@
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-2.0.2-blue.svg)](https://github.com/dedenlabs/claude-code-router-cli)
+[![Version](https://img.shields.io/badge/version-2.0.3-blue.svg)](https://github.com/dedenlabs/claude-code-router-cli)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
 
 **基于 [@musistudio/claude-code-router](https://github.com/musistudio/claude-code-router) 的增强版命令行路由工具**
 
-[✨ 新功能概览](#-新功能) • [🚀 快速开始](#-快速开始) • [📖 完整文档](./docs/UNIFIED_ROUTER_GUIDE.md) • [🔧 示例配置](./examples/) • [📚 官方教程](https://code.claude.com/docs/en/quickstart)
+[✨ 新功能概览](#-新功能) • [🚀 快速开始](#-快速开始) • [📖 完整文档](./docs/UNIFIED_ROUTER_GUIDE.md) • [📋 路由规则](./docs/UNIFIED_ROUTER_RULES.md) • [🔧 示例配置](./examples/) • [📚 官方教程](https://code.claude.com/docs/en/quickstart)
 
 </div>
 
@@ -29,7 +29,7 @@
 🚀 ──────────────────────────────────────
  📝 用户请求开始 [2025/12/07 00:35:46] 🎯 目标模型: opus
  🔗 请求ID: b8fdsc4f-ba72-4e2c-967d-2be41577f820
- ✨ 规则触发: 提供商映射规则
+ ✨ 规则触发: 代号映射规则
  📍 路由决策: opus → opus/glm-4.6
  📝 请求文本: <system-reminder>...
 As you answer the user's questions, you can use the following context:...
@@ -51,14 +51,14 @@ As you answer the user's questions, you can use the following context:...
 🔍 [DEBUG]     条件: 自定义函数: modelContainsComma
 🔍 [DEBUG]     结果: ❌ 不匹配
 🔍 [DEBUG] 评估条件 {"conditionType":"custom","condition":{"type":"custom","customFunction":"directModelMapping"},"requestedModel":"haiku"}
-🔍 [DEBUG]   规则 "提供商映射规则" (优先级: 190)
+🔍 [DEBUG]   规则 "代号映射规则" (优先级: 190)
 🔍 [DEBUG]     条件: 自定义函数: directModelMapping
 🔍 [DEBUG]     结果: ✅ 匹配
-🔍 [DEBUG] 🎯 规则 "提供商映射规则" 匹配成功，停止后续评估
-🔍 [DEBUG] 尝试直接模型映射 {"modelName":"haiku","providersCount":3}
-🔍 [DEBUG] 未找到直接模型映射，尝试通过 provider 名称匹配 {"modelName":"haiku"}
+🔍 [DEBUG] 🎯 规则 "代号映射规则" 匹配成功，停止后续评估
+🔍 [DEBUG] 尝试代号模型映射 {"modelName":"haiku","providersCount":3}
+🔍 [DEBUG] 未找到代号模型映射，尝试通过 provider 名称匹配 {"modelName":"haiku"}
 🔍 [DEBUG] 🔄 变量替换完成 {"原始路由":"${mappedModel}","最终路由":"haiku,glm-4.5-air"}
- ✨ 规则触发: 提供商映射规则
+ ✨ 规则触发: 代号映射规则
  📍 路由决策: haiku → haiku/glm-4.5-air
  📝 请求文本:
  Please write a 5-10 word title for the following conversation:...
@@ -279,7 +279,7 @@ module.exports = { checkUserPreference };
         }
       },
       {
-        "name": "提供商映射规则",
+        "name": "代号映射规则",
         "priority": 190,
         "enabled": true,
         "condition": {
@@ -288,7 +288,7 @@ module.exports = { checkUserPreference };
         },
         "action": {
           "route": "${mappedModel}",
-          "description": "将模型名映射到对应provider"
+          "description": "将provider作为代号，映射到对应的model模型"
         }
       },
       {
@@ -569,6 +569,28 @@ export class MyTransformer extends BaseTransformer {
 
 ## 📈 版本历史
 
+### v2.0.3 (2025-12-16)
+
+**🔧 核心问题修复**
+
+**✅ 字段兼容性问题修复**
+- 修复 `${subagent}` 变量替换失败问题
+- 实现智能字段兼容机制，自动兼容 `content` 和 `text` 字段
+- 确保老用户配置无需修改，完全向后兼容
+- 优化 `getFieldValue` 方法，支持 `system.1.text` 路径自动获取 `content` 字段
+
+**📚 文档完善**
+- 新增《统一路由引擎规则文档》(UNIFIED_ROUTER_RULES.md)
+- 提供完整的技术规则说明和 Mermaid 流程图
+- 修复文档中的 Mermaid 图表解析错误
+- 标准化术语为"代号模型映射规则"
+- 在 README.md 中添加路由规则文档引用
+
+**🧪 测试增强**
+- 新增字段兼容性的单元测试
+- 验证所有路由规则的正确性 (8/8 测试用例通过)
+- 确保变量替换机制正常工作
+
 ### v2.0.2 (2025-12-14)
 
 **📚 文档修复**
@@ -650,6 +672,7 @@ MIT License - 与原版保持一致
  
 [🐛 报告问题](https://github.com/dedenlabs/claude-code-router-cli/issues) •
 [💡 功能建议](https://github.com/dedenlabs/claude-code-router-cli/issues) •
-[📖 完整文档](./docs/UNIFIED_ROUTER_GUIDE.md)
+[📖 完整文档](./docs/UNIFIED_ROUTER_GUIDE.md) •
+[📋 路由规则](./docs/UNIFIED_ROUTER_RULES.md)
 
 </div>

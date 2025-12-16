@@ -2,6 +2,7 @@ import Server from "@musistudio/llms";
 import { readConfigFile, writeConfigFile, backupConfigFile } from "./utils";
 import { checkForUpdates, performUpdate } from "./utils";
 import { join } from "path";
+import fastifyStatic from "@fastify/static";
 import {
   readdirSync,
   statSync,
@@ -11,6 +12,7 @@ import {
 } from "fs";
 import { homedir } from "os";
 import { calculateTokenCount } from "./utils/router";
+import { normalizeConfig } from "./utils/config-handler";
 
 export const createServer = (config: any): Server => {
   const server = new Server(config);
@@ -23,7 +25,9 @@ export const createServer = (config: any): Server => {
 
   // Add endpoint to read config.json with access control
   server.app.get("/api/config", async (req, reply) => {
-    return await readConfigFile();
+    const config = await readConfigFile();
+    // 规范化配置格式，确保始终返回统一格式
+    return normalizeConfig(config);
   });
 
   server.app.get("/api/transformers", async () => {
@@ -42,13 +46,16 @@ export const createServer = (config: any): Server => {
   server.app.post("/api/config", async (req, reply) => {
     const newConfig = req.body;
 
+    // 规范化配置格式，确保始终保存统一格式
+    const normalizedConfig = normalizeConfig(newConfig);
+
     // Backup existing config file if it exists
     const backupPath = await backupConfigFile();
     if (backupPath) {
       console.log(`Backed up existing configuration file to ${backupPath}`);
     }
 
-    await writeConfigFile(newConfig);
+    await writeConfigFile(normalizedConfig);
     return { success: true, message: "Config saved successfully" };
   });
 
@@ -64,6 +71,18 @@ export const createServer = (config: any): Server => {
         stdio: "ignore",
       });
     }, 1000);
+  });
+
+  // Register static file serving with caching
+  server.app.register(fastifyStatic, {
+    root: join(__dirname, "..", "ui", "dist"),
+    prefix: "/ui/",
+    maxAge: "1h",
+  });
+
+  // Redirect /ui to /ui/ for proper static file serving
+  server.app.get("/ui", async (_, reply) => {
+    return reply.redirect("/ui/");
   });
 
   // 版本检查端点

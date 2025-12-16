@@ -1,52 +1,47 @@
 {
-  "LOG": true,
+  "LOG": false,
+  "LOG_LEVEL": "info",
+  "CLAUDE_PATH": "",
   "HOST": "127.0.0.1",
   "PORT": 3456,
-  "APIKEY": "1",
-  "API_TIMEOUT_MS": 600000,
+  "APIKEY": "sk-anything",
+  "API_TIMEOUT_MS": "600000",
+  "PROXY_URL": "",
   "Providers": [
     {
-      "name": "openrouter",
-      "api_base_url": "https://openrouter.ai/api/v1/chat/completions",
-      "api_key": "sk-or-v1-",
-      "models": [
-        "anthropic/claude-3.5-sonnet",
-        "anthropic/claude-3.7-sonnet:thinking",
-        "deepseek/deepseek-chat-v3-0324",
-        "@preset/kimi"
-      ],
-      "transformer": {
-        "use": ["openrouter"],
-        "deepseek/deepseek-chat-v3-0324": {
-          "use": ["tooluse"]
-        }
-      }
+      "name": "haiku",
+      "api_base_url": "https://api.minimaxi.com/anthropic/v1/messages",
+      "api_key": "YOUR_API_KEY",
+      "models": ["MiniMax-M2"]
     },
     {
-      "name": "deepseek",
-      "api_base_url": "https://api.deepseek.com/chat/completions",
-      "api_key": "sk-",
-      "models": ["deepseek-chat", "deepseek-reasoner"],
-      "transformer": {
-        "use": ["deepseek"],
-        "deepseek-chat": {
-          "use": ["tooluse"]
-        }
-      }
+      "name": "sonnet",
+      "api_base_url": "https://api.minimaxi.com/anthropic/v1/messages",
+      "api_key": "YOUR_API_KEY",
+      "models": ["MiniMax-M2"]
     },
     {
-      "name": "gemini",
-      "api_base_url": "https://generativelanguage.googleapis.com/v1beta/models/",
-      "api_key": "",
-      "models": ["gemini-2.5-flash", "gemini-2.5-pro"],
-      "transformer": {
-        "use": ["gemini"]
-      }
+      "name": "opus",
+      "api_base_url": "https://api.minimaxi.com/anthropic/v1/messages",
+      "api_key": "YOUR_API_KEY",
+      "models": ["MiniMax-M2"]
+    },
+    {
+      "name": "claude",
+      "api_base_url": "https://api.minimaxi.com/anthropic/v1/messages",
+      "api_key": "YOUR_API_KEY",
+      "models": ["MiniMax-M2"]
+    },
+    {
+      "name": "unknown",
+      "api_base_url": "https://api.minimaxi.com/anthropic/v1/messages",
+      "api_key": "YOUR_API_KEY",
+      "models": ["MiniMax-M2"]
     }
   ],
   "Router": {
     "engine": "unified",
-    "defaultRoute": "openrouter,anthropic/claude-3.5-sonnet",
+    "defaultRoute": "sonnet,MiniMax-M2",
     "rules": [
       {
         "name": "longContext",
@@ -58,8 +53,9 @@
           "operator": "gt"
         },
         "action": {
-          "route": "gemini,gemini-2.5-pro",
-          "transformers": []
+          "route": "sonnet,MiniMax-M2",
+          "transformers": [],
+          "description": "长上下文路由：基于token阈值选择模型"
         }
       },
       {
@@ -69,11 +65,13 @@
         "condition": {
           "type": "fieldExists",
           "field": "system.1.text",
-          "operator": "exists"
+          "operator": "contains",
+          "value": "<CCR-SUBAGENT-MODEL>"
         },
         "action": {
           "route": "${subagent}",
-          "transformers": []
+          "transformers": [],
+          "description": "子代理路由：通过特殊标记选择模型"
         }
       },
       {
@@ -86,8 +84,9 @@
           "operator": "contains"
         },
         "action": {
-          "route": "openrouter,@preset/kimi",
-          "transformers": []
+          "route": "haiku,MiniMax-M2",
+          "transformers": [],
+          "description": "后台路由：Haiku模型自动使用轻量级模型"
         }
       },
       {
@@ -100,8 +99,9 @@
           "operator": "exists"
         },
         "action": {
-          "route": "gemini,gemini-2.5-flash",
-          "transformers": []
+          "route": "sonnet,MiniMax-M2",
+          "transformers": [],
+          "description": "网络搜索路由：检测到web_search工具时使用特定模型"
         }
       },
       {
@@ -114,8 +114,9 @@
           "operator": "exists"
         },
         "action": {
-          "route": "deepseek,deepseek-reasoner",
-          "transformers": []
+          "route": "opus,MiniMax-M2",
+          "transformers": [],
+          "description": "思考模式路由：检测thinking参数时使用特定模型"
         }
       },
       {
@@ -128,7 +129,8 @@
         },
         "action": {
           "route": "${mappedModel}",
-          "transformers": []
+          "transformers": [],
+          "description": "代号映射：将provider作为代号，映射到对应的model模型"
         }
       },
       {
@@ -141,7 +143,8 @@
         },
         "action": {
           "route": "${userModel}",
-          "transformers": []
+          "transformers": [],
+          "description": "用户指定路由：用户在请求中直接指定provider,model格式"
         }
       }
     ],
@@ -151,9 +154,9 @@
       "ttl": 300000
     },
     "debug": {
-      "enabled": false,
-      "logLevel": "info",
-      "logToFile": true,
+      "enabled": true,
+      "logLevel": "debug",
+      "logToFile": false,
       "logToConsole": true
     },
     "contextThreshold": {
@@ -161,5 +164,5 @@
       "longContext": 60000
     }
   },
-  "NON_INTERACTIVE_MODE": false
+  "transformers": []
 }

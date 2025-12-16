@@ -89,6 +89,7 @@ export interface RouteAction {
   route: string;
   transformers?: string[];
   metadata?: Record<string, any>;
+  description?: string; // 添加描述字段，支持配置文件中的description
 }
 
 export interface RouteRule {

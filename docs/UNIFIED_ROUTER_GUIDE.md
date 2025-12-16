@@ -13,6 +13,8 @@
 5. **缓存优化** - 提高路由性能
 6. **友好日志** - 清晰的路由决策日志
 
+> 📋 **详细规则说明**: 完整的技术规则文档请参考 [UNIFIED_ROUTER_RULES.md](./UNIFIED_ROUTER_RULES.md)
+
 ## 配置格式
 
 ### 基本结构
@@ -93,7 +95,7 @@
 
 - `${userModel}` - 用户原始指定的模型
 - `${subagent}` - 从系统消息提取的子代理模型
-- `${mappedModel}` - 将模型名映射到provider,model格式
+- `${mappedModel}` - 将provider作为代号，映射到对应的model模型
 
 ## 默认规则
 
@@ -104,7 +106,7 @@
 3. **background** (优先级80) - 检测Haiku模型
 4. **webSearch** (优先级70) - 检测网络搜索工具
 5. **thinking** (优先级60) - 检测思考模式
-6. **directMapping** (优先级50) - 直接模型名映射
+6. **directMapping** (优先级50) - provider代号映射model模型
 7. **userSpecified** (优先级40) - 用户指定provider,model格式
 
 ## 配置示例

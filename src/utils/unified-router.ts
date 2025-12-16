@@ -111,8 +111,7 @@ export class UnifiedRouter implements IUnifiedRouter {
     // 强制设置思考模式为 true (需要对象格式)
     // if (req.body) {
     //   req.body.thinking = { enabled: true };
-    // }
-    // console.log("req.body", JSON.stringify(req.body));
+    // } 
     this.logger.info(
       `📝 用户请求开始 [${timeStr}] 🎯 目标模型: ${requestedModel || "default"}  ${req.body?.thinking?.enabled && "💡模型选择思考:启用" || ""} ${req.body?.thinking ? JSON.stringify(req.body?.thinking) : ""}`,
     );
@@ -149,9 +148,35 @@ export class UnifiedRouter implements IUnifiedRouter {
           ? matchResult.action.route
           : this.config.defaultRoute;
 
+      let finalMatchedRule = matchResult.matched ? (matchResult.ruleName || "默认路由") : "默认路由";
+
       // 变量替换处理
       if (finalRoute.includes("${")) {
+        const originalRoute = finalRoute;
         finalRoute = this.processVariableSubstitution(finalRoute, req, context);
+        // 只有当变量替换后仍包含未替换的变量时，才回退到默认路由
+        if (finalRoute.includes("${")) {
+          finalMatchedRule = "默认路由";
+        }
+      } else {
+        // 如果没有变量替换但匹配到了directMapping规则，也需要检查是否需要代号映射
+        const requestedModel = req.body?.model;
+        if (matchResult.matched && matchResult.ruleName === 'directMapping' && requestedModel && !requestedModel.includes(',')) {
+          const mappedRoute = this.mapDirectModelToProvider(requestedModel, req);
+          if (mappedRoute) {
+            finalRoute = mappedRoute;
+            // 只有当映射结果就是默认路由时，才将matchedRule设置为"默认路由"
+            if (mappedRoute === this.config.defaultRoute) {
+              finalMatchedRule = "默认路由";
+            } else {
+              finalMatchedRule = "directMapping";
+            }
+          } else {
+            // 无法映射时使用默认路由
+            finalRoute = this.config.defaultRoute;
+            finalMatchedRule = "默认路由";
+          }
+        }
       }
 
       // 生成缓存键（使用最终的路由结果）
@@ -170,7 +195,7 @@ export class UnifiedRouter implements IUnifiedRouter {
       // 生成路由结果
       result = result || {
         route: finalRoute,
-        matchedRule: matchResult.ruleName,
+        matchedRule: finalMatchedRule,
         transformers: matchResult.action?.transformers || [],
         decisionTime: Date.now() - startTime,
         fromCache: false,
@@ -196,15 +221,14 @@ export class UnifiedRouter implements IUnifiedRouter {
       const routeParts = finalRoute.split(",");
       const provider = routeParts[0];
       const model = routeParts[1] || "默认模型";
-      const ruleName = matchResult.ruleName || "默认路由";
 
       // 显示路由决策信息
-      if (ruleName === "默认路由") {
+      if (finalMatchedRule === "默认路由") {
         // 如果使用默认路由，只显示简短信息
         this.logger.info(`🎯 使用默认路由 → ${provider}/${model}`);
       } else {
         // 如果匹配到特定规则，显示详细信息
-        this.logger.info(`✨ 规则触发: ${ruleName}`);
+        this.logger.info(`✨ 规则触发: ${finalMatchedRule}`);
         this.logger.info(
           `📍 路由决策: ${requestedModel} → ${provider}/${model}`,
         );
@@ -336,6 +360,7 @@ export class UnifiedRouter implements IUnifiedRouter {
       }
 
       if (evaluation.matches) {
+        // console.log(`🎯 规则 "${rule.name}" 匹配成功，停止后续评估`);
         if (this.config.debug?.enabled) {
           this.logger.debug(`🎯 规则 "${rule.name}" 匹配成功，停止后续评估`);
         }
@@ -431,24 +456,31 @@ export class UnifiedRouter implements IUnifiedRouter {
           break;
 
         case "fieldExists":
-          const fieldValue = this.getFieldValue(
-            context.req?.body,
-            condition.field!,
-          );
+          const fieldPath = condition.field!;
+          const fieldValue = this.getFieldValue(context.req?.body, fieldPath);
+
+          // console.log(`context.req?.body:`, JSON.stringify(context.req?.body));
           value = fieldValue;
           matches =
             condition.operator === "exists"
               ? fieldValue !== undefined && fieldValue !== null
-              : this.compareValues(
-                fieldValue,
-                condition.value,
-                condition.operator || "eq",
-              );
+              : condition.operator === "contains"
+                ? fieldValue !== undefined && fieldValue !== null && String(fieldValue).includes(condition.value)
+                : this.compareValues(
+                  fieldValue,
+                  condition.value,
+                  condition.operator || "eq",
+                );
           break;
 
         case "custom":
+          // console.log(`评估自定义条件: ${condition.customFunction}`, {
+          //   model: context.req?.body?.model,
+          //   condition
+          // });
           matches = await this.evaluateCustomCondition(condition, context);
           value = matches;
+          // console.log(`自定义条件结果: ${condition.customFunction} = ${matches}`);
           break;
 
         case "externalFunction":
@@ -460,11 +492,13 @@ export class UnifiedRouter implements IUnifiedRouter {
           throw new Error(`不支持的条件类型: ${condition.type}`);
       }
 
-      return {
+      const result = {
         matches,
         value,
         evaluationTime: Date.now() - startTime,
       };
+      // console.log(`条件评估结果 [${condition.type || condition.customFunction}]:`, result);
+      return result;
     } catch (error: any) {
       return {
         matches: false,
@@ -537,9 +571,18 @@ export class UnifiedRouter implements IUnifiedRouter {
     const parts = fieldPath.split(".");
     let current = obj;
 
-    for (const part of parts) {
-      if (current && typeof current === "object" && part in current) {
-        current = current[part];
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+
+      if (current && typeof current === "object") {
+        // 特殊处理：对于system消息，自动兼容content和text字段
+        if (i === parts.length - 1 && part === "text" && current !== obj) {
+          // 如果是system.X.text路径，优先尝试content，备选text
+          const systemMessage = current;
+          current = systemMessage?.content || systemMessage?.text;
+        } else {
+          current = current[part];
+        }
       } else {
         return undefined;
       }
@@ -563,7 +606,8 @@ export class UnifiedRouter implements IUnifiedRouter {
 
       case "directModelMapping":
         const model = context.req?.body?.model;
-        return model && !model.includes(",") && model.trim() !== "";
+        // 允许所有非逗号分隔的简单模型名通过（包括空模型）
+        return model !== undefined && !model.includes(",");
 
       default:
         this.logger.warn(`未知的自定义条件函数: ${customFunction}`);
@@ -645,13 +689,25 @@ export class UnifiedRouter implements IUnifiedRouter {
         processedRoute = this.config.defaultRoute;
       }
     }
-
+ 
     // 处理 ${subagent} - 从系统消息中提取的子代理模型
     if (processedRoute.includes("${subagent}")) {
-      const systemText = req.body?.system?.[1]?.text || "";
+      // 尝试从所有系统消息中查找子代理模型标记
+      let systemText = "";
+      const systemMessages = req.body?.system || [];
+
+      for (let i = 0; i < systemMessages.length; i++) {
+        const content = systemMessages[i]?.content || systemMessages[i]?.text || "";
+        if (content.includes("<CCR-SUBAGENT-MODEL>")) {
+          systemText = content;
+          break;
+        }
+      }
+
       const match = systemText.match(
         /<CCR-SUBAGENT-MODEL>(.*?)<\/CCR-SUBAGENT-MODEL>/,
       );
+
       if (match && match[1]) {
         processedRoute = processedRoute.replace(/\$\{subagent\}/g, match[1]);
       } else {
@@ -660,25 +716,25 @@ export class UnifiedRouter implements IUnifiedRouter {
       }
     }
 
-    // 处理 ${mappedModel} - 将用户指定的模型名映射到provider,model格式
+    // 处理 ${mappedModel} - 将provider作为代号，映射到对应的model模型
     if (processedRoute.includes("${mappedModel}")) {
       const userModel = req.body?.model;
       if (userModel && !userModel.includes(",")) {
         const mappedRoute = this.mapDirectModelToProvider(userModel, req);
-        if (mappedRoute) {
+        if (mappedRoute && mappedRoute !== this.config.defaultRoute) {
           processedRoute = processedRoute.replace(
             /\$\{mappedModel\}/g,
             mappedRoute,
           );
         } else {
           this.logger.warn(
-            `\${mappedModel} 变量替换失败，未找到模型 ${userModel} 的映射`,
+            `\${mappedModel} 变量替换失败，未找到模型 ${userModel} 的有效映射`,
           );
-          processedRoute = this.config.defaultRoute;
+          // 不回退到默认路由，保持原始变量让上游处理
         }
       } else {
         this.logger.warn("${mappedModel} 变量替换失败，用户模型格式不正确");
-        processedRoute = this.config.defaultRoute;
+        // 不回退到默认路由，保持原始变量让上游处理
       }
     }
 
@@ -688,16 +744,29 @@ export class UnifiedRouter implements IUnifiedRouter {
         最终路由: processedRoute,
       });
     }
+
+    // 如果还有未替换的变量，根据变量类型决定处理方式
+    if (processedRoute.includes("${")) {
+      // 对于 ${subagent} 变量，如果替换失败则保持原样，让上游逻辑处理
+      if (processedRoute.includes("${subagent}")) {
+        this.logger.debug("${subagent} 变量替换失败，保持原样");
+        return processedRoute;
+      }
+      // 对于其他变量，回退到默认路由
+      this.logger.warn(`变量替换未完成，仍包含未替换的变量: ${processedRoute}，使用默认路由`);
+      return this.config.defaultRoute;
+    }
+
     return processedRoute;
   }
 
   /**
-   * 将直接模型名映射到provider,model格式
+   * 将provider作为代号，映射到对应的model模型
    */
   private mapDirectModelToProvider(modelName: string, req: any): string | null {
     const providers = req.config?.Providers || [];
 
-    this.logger.debug("尝试直接模型映射", {
+    this.logger.debug("尝试代号模型映射", {
       modelName,
       providersCount: providers.length,
     });
@@ -728,7 +797,7 @@ export class UnifiedRouter implements IUnifiedRouter {
     }
 
     // 第二步：如果没有找到模型，尝试通过 provider 名称匹配
-    this.logger.debug("未找到直接模型映射，尝试通过 provider 名称匹配", {
+    this.logger.debug("未找到代号模型映射，尝试通过 provider 名称匹配", {
       modelName,
     });
     const matchedProvider = providers.find(
@@ -750,8 +819,8 @@ export class UnifiedRouter implements IUnifiedRouter {
       }
     }
 
-    // 未找到任何映射，返回 null 让路由器使用默认路由
-    this.logger.warn(`未找到模型 '${modelName}' 的映射，将使用默认路由`);
+    // 未找到任何映射，返回null让调用者处理
+    this.logger.debug(`未找到模型 '${modelName}' 的映射，返回null`);
     return null;
   }
 
@@ -899,110 +968,145 @@ export function migrateLegacyConfig(
     rules.push({
       name: "longContext",
       priority: 100,
+      enabled: true,
       condition: {
         type: "tokenThreshold",
         value: legacy.longContextThreshold || 60000,
-        operator: "gt",
+        operator: "gt"
       },
       action: {
         route: legacy.longContext,
-      },
+        transformers: [],
+        description: "长上下文路由：基于token阈值选择模型"
+      }
     });
   }
 
-  // 子代理规则
+  // 子代理规则 - 兼容content和text字段
   rules.push({
     name: "subagent",
     priority: 90,
+    enabled: true,
     condition: {
-      type: "custom",
-      customFunction: "fieldExists",
+      type: "fieldExists",
       field: "system.1.text",
       operator: "contains",
+      value: "<CCR-SUBAGENT-MODEL>"
     },
     action: {
       route: "${subagent}",
-    },
+      transformers: [],
+      description: "子代理路由：通过特殊标记选择模型"
+    }
   });
 
   // 后台模型规则（Haiku）
-  rules.push({
-    name: "background",
-    priority: 80,
-    condition: {
-      type: "custom",
-      customFunction: "modelContains",
-      value: "haiku",
-    },
-    action: {
-      route: legacy.background || legacy.default || "",
-    },
-  });
+  if (legacy.background) {
+    rules.push({
+      name: "background",
+      priority: 80,
+      enabled: true,
+      condition: {
+        type: "modelContains",
+        value: "haiku",
+        operator: "contains"
+      },
+      action: {
+        route: legacy.background,
+        transformers: [],
+        description: "后台路由：Haiku模型自动使用轻量级模型"
+      }
+    });
+  }
 
   // 网络搜索规则
-  rules.push({
-    name: "webSearch",
-    priority: 70,
-    condition: {
-      type: "toolExists",
-      value: "web_search",
-    },
-    action: {
-      route: legacy.webSearch || legacy.default || "",
-    },
-  });
+  if (legacy.webSearch) {
+    rules.push({
+      name: "webSearch",
+      priority: 70,
+      enabled: true,
+      condition: {
+        type: "toolExists",
+        value: "web_search",
+        operator: "exists"
+      },
+      action: {
+        route: legacy.webSearch,
+        transformers: [],
+        description: "网络搜索路由：检测到web_search工具时使用特定模型"
+      }
+    });
+  }
 
   // 思考模式规则
-  rules.push({
-    name: "thinking",
-    priority: 60,
-    condition: {
-      type: "fieldExists",
-      field: "thinking",
-    },
-    action: {
-      route: legacy.think || legacy.default || "",
-    },
-  });
+  if (legacy.think) {
+    rules.push({
+      name: "thinking",
+      priority: 60,
+      enabled: true,
+      condition: {
+        type: "fieldExists",
+        field: "thinking",
+        operator: "exists"
+      },
+      action: {
+        route: legacy.think,
+        transformers: [],
+        description: "思考模式路由：检测thinking参数时使用特定模型"
+      }
+    });
+  }
 
-  // 直接模型映射规则
+  // 代号模型映射规则
   rules.push({
     name: "directMapping",
     priority: 50,
+    enabled: true,
     condition: {
       type: "custom",
-      customFunction: "directModelMapping",
+      customFunction: "directModelMapping"
     },
     action: {
       route: "${mappedModel}",
-    },
+      transformers: [],
+      description: "代号映射：将provider作为代号，映射到对应的model模型"
+    }
   });
 
   // 用户指定模型规则（包含逗号的provider,model格式）
   rules.push({
     name: "userSpecified",
     priority: 40,
+    enabled: true,
     condition: {
       type: "custom",
-      customFunction: "modelContainsComma",
+      customFunction: "modelContainsComma"
     },
     action: {
       route: "${userModel}",
-    },
+      transformers: [],
+      description: "用户指定路由：用户在请求中直接指定provider,model格式"
+    }
   });
 
   return {
     engine: "unified",
     defaultRoute: legacy.default || "",
     rules,
-    contextThreshold: {
-      default: 1000,
-      longContext: legacy.longContextThreshold || 60000,
-    },
     cache: {
       enabled: true,
       maxSize: 1000,
-      ttl: 300000,
+      ttl: 300000
     },
+    debug: {
+      enabled: false,
+      logLevel: "info",
+      logToFile: true,
+      logToConsole: true
+    },
+    contextThreshold: {
+      default: 1000,
+      longContext: legacy.longContextThreshold || 60000
+    }
   };
 }

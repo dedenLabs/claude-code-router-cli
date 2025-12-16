@@ -147,14 +147,14 @@ export const DEFAULT_CONFIG = {
         "enabled": true
       },
       {
-        "name": "提供商映射规则",
+        "name": "代号映射规则",
         "condition": {
           "type": "custom",
           "customFunction": "directModelMapping"
         },
         "action": {
           "route": "${mappedModel}",
-          "description": "提供商映射：将用户指定的模型名映射到对应的provider格式"
+          "description": "代号映射：将provider作为代号，映射到对应的model模型"
         },
         "priority": 190,
         "enabled": true

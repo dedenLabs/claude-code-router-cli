@@ -1,6 +1,6 @@
 {
   "name": "@dedenlabs/claude-code-router-cli",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "基于@musistudio/claude-code-router的增强版CLI路由工具 - 支持统一路由引擎、外部规则加载、智能日志系统、自动配置迁移和GLM思考模式",
   "bin": {
     "ccr": "dist/cli.js"
@@ -8,7 +8,14 @@
   "scripts": {
     "build": "node scripts/build.js",
     "release": "npm run build && npm publish",
-    "prepublishOnly": "node scripts/prepublish-check.js"
+    "prepublishOnly": "node scripts/prepublish-check.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui",
+    "test:integration": "vitest run --config ./vitest.config.ts tests/integration",
+    "test:unit": "vitest run --config ./vitest.config.ts tests/unit",
+    "test:ui:unit": "vitest run --config ./vitest.config.ts tests/ui"
   },
   "keywords": [
     "claude",
@@ -45,11 +52,16 @@
     "uuid": "^11.1.0"
   },
   "devDependencies": {
+    "@testing-library/react": "^14.3.1",
     "@types/node": "^24.0.15",
+    "@vitest/coverage-v8": "^2.1.9",
+    "@vitest/ui": "^2.1.9",
     "esbuild": "^0.25.1",
     "fastify": "^5.4.0",
+    "jsdom": "^25.0.1",
     "shx": "^0.4.0",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "vitest": "^2.1.9"
   },
   "files": [
     "dist/",

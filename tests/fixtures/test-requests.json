@@ -1,0 +1,99 @@
+{
+  "testCases": [
+    {
+      "name": "用户直接指定provider,model格式",
+      "request": {
+        "body": {
+          "model": "sonnet,MiniMax-M2",
+          "messages": [{"role": "user", "content": "hello"}]
+        }
+      },
+      "expectedRoute": "sonnet,MiniMax-M2",
+      "expectedRule": "userSpecified"
+    },
+    {
+      "name": "用户指定简单模型名",
+      "request": {
+        "body": {
+          "model": "claude",
+          "messages": [{"role": "user", "content": "hello"}]
+        }
+      },
+      "expectedRoute": "claude,MiniMax-M2",
+      "expectedRule": "directMapping"
+    },
+    {
+      "name": "长上下文请求",
+      "request": {
+        "body": {
+          "model": "sonnet",
+          "messages": [{"role": "user", "content": "This is a very long message content that would contain approximately 100000 characters when repeated many times to simulate a long context scenario for testing the router's long context rule detection mechanism."}]
+        }
+      },
+      "tokenCount": 70000,
+      "expectedRoute": "sonnet,MiniMax-M2",
+      "expectedRule": "longContext"
+    },
+    {
+      "name": "包含思考模式的请求",
+      "request": {
+        "body": {
+          "model": "sonnet",
+          "messages": [{"role": "user", "content": "hello"}],
+          "thinking": {"type": "enabled"}
+        }
+      },
+      "expectedRoute": "opus,MiniMax-M2",
+      "expectedRule": "thinking"
+    },
+    {
+      "name": "包含网络搜索工具的请求",
+      "request": {
+        "body": {
+          "model": "sonnet",
+          "messages": [{"role": "user", "content": "hello"}],
+          "tools": [{"type": "web_search", "function": {"name": "search_web"}}]
+        }
+      },
+      "expectedRoute": "sonnet,MiniMax-M2",
+      "expectedRule": "webSearch"
+    },
+    {
+      "name": "包含子代理标记的请求",
+      "request": {
+        "body": {
+          "model": "sonnet",
+          "messages": [{"role": "user", "content": "hello"}],
+          "system": [
+            {"role": "system", "content": "You are a helpful assistant"},
+            {"role": "system", "content": "<CCR-SUBAGENT-MODEL>opus,MiniMax-M2</CCR-SUBAGENT-MODEL>"}
+          ]
+        }
+      },
+      "expectedRoute": "opus,MiniMax-M2",
+      "expectedRule": "subagent"
+    },
+    {
+      "name": "后台模型请求",
+      "request": {
+        "body": {
+          "model": "haiku,something",
+          "messages": [{"role": "user", "content": "hello"}]
+        }
+      },
+      "expectedRoute": "haiku,MiniMax-M2",
+      "expectedRule": "background"
+    },
+    {
+      "name": "默认路由",
+      "request": {
+        "body": {
+          "model": "unknown",
+          "messages": [{"role": "user", "content": "hello"}]
+        }
+      },
+      "expectedRoute": "unknown,MiniMax-M2",
+      "expectedRule": "directMapping"
+    }
+  ]
+}
