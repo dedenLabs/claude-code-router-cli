@@ -1,8 +1,8 @@
-# Claude Code Router CLI v2.0
+# Claude Code Router CLI v2.0.4
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-2.0.3-blue.svg)](https://github.com/dedenlabs/claude-code-router-cli)
+[![Version](https://img.shields.io/badge/version-2.0.4-blue.svg)](https://github.com/dedenlabs/claude-code-router-cli)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
@@ -71,6 +71,18 @@ Respond with the title for the conversation and nothing else.
 
 ### 🔄 配置自动迁移 (Auto Migration)
 一键从旧版本配置迁移到新的统一路由格式
+
+**一行代码即可完成迁移：**
+```bash
+ccr migrate
+```
+
+迁移工具会自动：
+- ✅ 备份现有配置到 `~/.claude-code-router/config.backup.json`
+- ✅ 转换为统一路由引擎格式
+- ✅ 保留所有原有路由逻辑
+- ✅ 生成详细迁移报告
+
 
 ### 🎛️ GLM思考模式 (GLM Thinking)
 内置GLM模型思考转换器，提升推理质量
@@ -179,24 +191,66 @@ ccr stop      # 停止服务
   }
 }
 ```
+#### 🌐 可视化配置界面
+提供直观的 Web UI 界面，方便配置路由规则和监控服务状态
 
-### 🔌 外部规则支持
+**访问地址：** http://localhost:3456/ui/
 
-通过外部JavaScript文件定义复杂路由逻辑：
+![可视化配置界面](examples/image/README/1765879508612.png)
 
+**功能特性：**
+- ✅ 可视化路由规则管理
+- ✅ 实时服务状态监控
+- ✅ 交互式配置编辑器
+- ✅ 模型使用统计展示
+
+### 🔌 外部规则支持 (示例)
+
+通过外部JavaScript文件定义复杂路由逻辑，支持：
+
+**1. 调试日志收集** 📊
 ```javascript
-// external-rules/user-preference.js
-const userPreferences = {
-  'premium@company.com': { provider: 'opus', model: 'glm-4.6' },
-  'standard@company.com': { provider: 'sonnet', model: 'glm-4.5-air' }
-};
+// examples/external-rules/debug-logger.js
+function printModelRequestData(context) {
+  // 变量式日志收集，每种类型单独存储
+  const outputTypes = ['basic', 'messages', 'tools', 'usage'];
 
-function checkUserPreference(context) {
-  const userEmail = extractUserEmail(context);
-  return userPreferences[userEmail] !== undefined;
+  // 收集基本信息
+  let basicInfo = `Token数量: ${context.tokenCount}`;
+
+  // 收集消息内容
+  let messages = '';
+  context.messages.forEach(msg => {
+    messages += `${msg.role}: ${msg.content.substring(0, 100)}...`;
+  });
+
+  // 选择性输出到控制台和文件
+  console.log(`[调试] ${basicInfo}\n${messages}`);
+
+  return false; // 不拦截路由
 }
 
-module.exports = { checkUserPreference };
+module.exports = printModelRequestData;
+```
+
+详细使用说明请参考：[🔍 调试日志脚本使用指南](./examples/README-调试日志脚本.md)
+
+**2. 用户偏好路由** 👤
+```javascript
+// 根据用户邮箱路由到偏好模型
+function checkUserPreference(context) {
+  const userId = extractUserId(context); //context.body.metadata.user_id
+  return userPreferences[userId] !== undefined;
+} 
+```
+
+**3. 时间路由** ⏰
+```javascript
+// 根据工作时间路由到不同模型
+function isBusinessHours(context) {
+  const hour = new Date().getHours();
+  return hour >= 9 && hour < 18;
+}
 ```
 
 ### 📊 智能日志输出
@@ -568,6 +622,26 @@ export class MyTransformer extends BaseTransformer {
  
 
 ## 📈 版本历史
+
+### v2.0.4 (2025-12-17)
+
+**🚀 性能优化与功能增强**
+
+**⚡ 外部函数加载机制优化**
+- 优化外部函数加载优先级：配置指定方法名 → 默认导出 → evaluate函数
+- 提升统一路由引擎的性能和响应速度
+- 改进错误处理和调试日志输出
+- 增强变量替换功能的稳定性
+
+**🔧 调试工具完善**
+- 完善调试日志脚本，支持变量收集和选择性输出
+- 新增文件输出和深度拷贝功能
+- 添加调试日志配置示例文件
+
+**📚 文档与示例更新**
+- 完善README.md和外部规则文档
+- 新增路由目标输入组件演示文档
+- 更新外部规则使用示例和说明
 
 ### v2.0.3 (2025-12-16)
 

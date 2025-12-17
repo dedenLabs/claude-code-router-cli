@@ -25,7 +25,7 @@ export interface RouterConfig {
 
 // 统一路由引擎条件类型
 export interface RouteCondition {
-    type: 'tokenThreshold' | 'modelContains' | 'toolExists' | 'fieldExists' | 'custom' | 'externalFunction';
+    type: 'tokenThreshold' | 'modelContains' | 'toolExists' | 'fieldExists' | 'custom' | 'externalFunction' | 'ruleSpecifiedModel';
     field?: string;
     value?: any;
     operator?: 'gt' | 'lt' | 'eq' | 'contains' | 'startsWith' | 'exists';

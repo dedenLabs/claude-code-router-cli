@@ -75,7 +75,7 @@ export function useConfigUpdater(
     // 更新其他字段
     Object.keys(updates).forEach(key => {
       if (!['isUnified', 'routerConfig', 'providers'].includes(key)) {
-        newConfig[key] = updates[key];
+        (newConfig as any)[key] = (updates as any)[key];
       }
     });
 

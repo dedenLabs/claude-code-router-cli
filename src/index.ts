@@ -89,9 +89,11 @@ function getAccessibleIPs(HOST: string): string[] {
 function getPrimaryIP(HOST: string): string {
   const addresses = getAccessibleIPs(HOST);
   const privateIPRegex = /^(10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|192\.168\.)/;
-  return (
-    addresses.find((ip) => privateIPRegex.test(ip)) || addresses[0] || HOST
-  );
+  // 优先返回192.168.x.x，然后是其他私有地址
+  const priorityIP =
+    addresses.find((ip) => /^192\.168\./.test(ip)) ||
+    addresses.find((ip) => privateIPRegex.test(ip));
+  return priorityIP || addresses[0] || HOST;
 }
 
 async function initializeClaudeConfig() {

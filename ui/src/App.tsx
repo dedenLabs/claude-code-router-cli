@@ -337,16 +337,16 @@ function App() {
         </div>
       </header>
       <main className="flex h-[calc(100vh-4rem)] gap-4 p-4 overflow-hidden">
-        <div className="w-3/5">
-          <Providers />
-        </div>
-        <div className="flex w-2/5 flex-col gap-4">
+        <div className="flex w-3/5 flex-col gap-4">
           <div className="h-3/5">
-            <Router />
+            <Providers />
           </div>
           <div className="flex-1 overflow-hidden">
             <Transformers />
           </div>
+        </div>
+        <div className="w-2/5">
+          <Router />
         </div>
       </main>
       <SettingsDialog isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} />

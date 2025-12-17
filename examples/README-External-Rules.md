@@ -33,7 +33,37 @@
 }
 ```
 
-### 2. 外部规则文件格式
+### 2. 函数加载优先级
+
+系统采用以下优先级顺序加载外部函数：
+
+1. **优先查找配置文件中指定的函数名** (`functionName` 字段)
+2. **如果指定函数不存在，使用默认导出** (`export default` 或 `module.exports`)
+3. **如果默认导出也不存在，使用默认函数名** `"evaluate"`
+4. **如果都不存在，则报告错误**
+
+这种机制确保了最大的兼容性：
+- ✅ 支持明确指定函数名
+- ✅ 支持仅导出默认函数
+- ✅ 支持传统的 `evaluate` 函数名
+- ✅ 向下兼容旧版本配置
+
+**配置示例：**
+
+```json
+{
+  "externalFunction": {
+    "path": "./debug-logger.js",
+    "functionName": "printModelRequestData"
+  }
+}
+```
+
+如果不指定 `functionName`，系统会依次尝试：
+- `module.exports.default` (ES模块默认导出)
+- `module.exports.evaluate` (传统函数名)
+
+### 3. 外部规则文件格式
 
 外部 JS 文件需要导出一个或多个函数：
 
@@ -62,7 +92,7 @@ export function condition2(context) {
 }
 ```
 
-### 3. 上下文参数
+### 4. 上下文参数
 
 外部函数接收一个 `RouteContext` 对象，包含：
 

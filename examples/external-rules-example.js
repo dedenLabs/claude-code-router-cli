@@ -4,19 +4,19 @@
  * 演示如何使用 externalFunction 条件类型来加载外部 JS 规则
  */
 
-// 示例1：根据用户请求的特定属性进行路由
-const userPreferenceRule = {
-  name: 'userPreferenceRouting',
+// 示例1：只打印模型请求的数据不进行匹配
+const printModelRequestDataRule = {
+  name: 'printModelRequestData',
   priority: 100,
   condition: {
     type: 'externalFunction',
     externalFunction: {
-      path: './external-rules/user-preference.js',
+      path: './external-rules/debug-logger.js',
       functionName: 'checkUserPreference'
     }
   },
   action: {
-    route: 'gpt-4,openai'
+    route: ''
   }
 };
 
@@ -54,7 +54,7 @@ const complexRoutingRule = {
 
 // 将这些规则添加到配置中
 export const externalRules = [
-  userPreferenceRule,
+  printModelRequestDataRule,
   timeBasedRule,
   complexRoutingRule
 ];

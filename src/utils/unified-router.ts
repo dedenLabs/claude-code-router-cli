@@ -632,9 +632,24 @@ export class UnifiedRouter implements IUnifiedRouter {
     try {
       // 动态导入外部函数
       const externalModule = await import(condition.externalFunction!.path);
-      const conditionFunction =
-        externalModule.default ||
-        externalModule[condition.externalFunction!.functionName || "evaluate"];
+
+      // 优先查找配置文件中指定的方法名
+      const functionName = condition.externalFunction!.functionName;
+      let conditionFunction;
+
+      if (functionName && externalModule[functionName]) {
+        // 1. 优先使用配置文件中指定的方法名
+        conditionFunction = externalModule[functionName];
+      } else if (externalModule.default) {
+        // 2. 如果指定的方法名不存在，使用默认导出
+        conditionFunction = externalModule.default;
+      } else if (externalModule["evaluate"]) {
+        // 3. 如果默认导出也不存在，使用默认方法名 "evaluate"
+        conditionFunction = externalModule["evaluate"];
+      } else {
+        // 4. 都不存在则返回 undefined，后续会报错
+        conditionFunction = undefined;
+      }
 
       if (typeof conditionFunction !== "function") {
         this.logger.error(

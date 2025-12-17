@@ -60,6 +60,20 @@ try {
     });
   }
 
+
+  // Build the UI
+  console.log('Building UI...');
+  // Check if node_modules exists in ui directory, if not install dependencies
+  if (!fs.existsSync('ui/node_modules')) {
+    console.log('Installing UI dependencies...');
+    execSync('cd ui && npm install', { stdio: 'inherit' });
+  }
+  execSync('cd ui && npm run build', { stdio: 'inherit' });
+
+  // Copy the built UI index.html to dist
+  console.log('Copying UI build artifacts...');
+  execSync('shx cp ui/dist/index.html dist/index.html', { stdio: 'inherit' });
+
   console.log("Build completed successfully!");
 } catch (error) {
   console.error("Build failed:", error.message);

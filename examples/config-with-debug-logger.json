@@ -1,0 +1,111 @@
+{
+  "Router": {
+    "engine": "unified",
+    "defaultRoute": "sonnet-minimax",
+    "rules": [
+      {
+        "name": "调试日志打印规则",
+        "priority": 999,
+        "enabled": true,
+        "condition": {
+          "type": "externalFunction",
+          "externalFunction": {
+            "path": "../examples/external-rules/debug-logger.js",
+            "functionName": "printModelRequestData"
+          }
+        },
+        "action": {
+          "route": "${mappedModel}",
+          "description": "打印所有请求数据但不匹配路由"
+        }
+      },
+      {
+        "name": "用户指定规则",
+        "priority": 200,
+        "enabled": true,
+        "condition": {
+          "type": "custom",
+          "customFunction": "modelContainsComma"
+        },
+        "action": {
+          "route": "${userModel}",
+          "description": "用户直接指定 provider,model 格式"
+        }
+      },
+      {
+        "name": "代号映射规则",
+        "priority": 190,
+        "enabled": true,
+        "condition": {
+          "type": "custom",
+          "customFunction": "directModelMapping"
+        },
+        "action": {
+          "route": "${mappedModel}",
+          "description": "将provider作为代号，映射到对应的model模型"
+        }
+      },
+      {
+        "name": "长上下文规则",
+        "priority": 100,
+        "enabled": true,
+        "condition": {
+          "type": "tokenThreshold",
+          "value": 180000,
+          "operator": "gt"
+        },
+        "action": {
+          "route": "sonnet-minimax",
+          "description": "基于token阈值选择模型"
+        }
+      }
+    ],
+    "cache": {
+      "enabled": true,
+      "ttl": 300000,
+      "maxSize": 1000
+    },
+    "debug": {
+      "enabled": true,
+      "logLevel": "info"
+    }
+  },
+  "Providers": [
+    {
+      "name": "sonnet-minimax",
+      "api_base_url": "https://api.minimaxi.com/anthropic/v1/messages",
+      "api_key": "YOUR_MINIMAX_API_KEY",
+      "models": ["MiniMax-M2"],
+      "transformer": { "use": ["Anthropic"] }
+    },
+    {
+      "name": "opus-glm",
+      "api_base_url": "https://api.z.ai/api/coding/paas/v4/chat/completions",
+      "api_key": "YOUR_GLM_API_KEY",
+      "models": ["glm-4.6"],
+      "transformer": { "use": ["reasoning", "glm-thinking"] }
+    },
+    {
+      "name": "haiku-glm",
+      "api_base_url": "https://open.bigmodel.cn/api/anthropic/v1/messages",
+      "api_key": "YOUR_GLM_API_KEY",
+      "models": ["glm-4.5-air"],
+      "transformer": { "use": ["Anthropic"] }
+    }
+  ],
+  "transformers": [
+    {
+      "path": "./transformers/glm-thinking.js",
+      "options": {
+        "enabled": "false",
+        "debug": "true"
+      }
+    }
+  ],
+  "LOG": true,
+  "LOG_LEVEL": "info",
+  "HOST": "127.0.0.1",
+  "PORT": 3456,
+  "APIKEY": "sk-anything",
+  "API_TIMEOUT_MS": 600000
+}

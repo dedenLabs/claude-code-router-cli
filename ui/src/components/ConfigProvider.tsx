@@ -89,15 +89,7 @@ export function ConfigProvider({ children }: ConfigProviderProps) {
             default: { modules: [] },
             powerline: { modules: [] }
           },
-          Router: data.Router && typeof data.Router === 'object' ? {
-            default: typeof data.Router.default === 'string' ? data.Router.default : '',
-            background: typeof data.Router.background === 'string' ? data.Router.background : '',
-            think: typeof data.Router.think === 'string' ? data.Router.think : '',
-            longContext: typeof data.Router.longContext === 'string' ? data.Router.longContext : '',
-            longContextThreshold: typeof data.Router.longContextThreshold === 'number' ? data.Router.longContextThreshold : 60000,
-            webSearch: typeof data.Router.webSearch === 'string' ? data.Router.webSearch : '',
-            image: typeof data.Router.image === 'string' ? data.Router.image : ''
-          } : {
+          Router: data.Router && typeof data.Router === 'object' ? data.Router : {
             default: '',
             background: '',
             think: '',
@@ -136,7 +128,7 @@ export function ConfigProvider({ children }: ConfigProviderProps) {
               longContextThreshold: 60000,
               webSearch: '',
               image: ''
-            },
+            } as any,
             CUSTOM_ROUTER_PATH: ''
           });
           setError(err as Error);
