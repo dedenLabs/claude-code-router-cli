@@ -75,7 +75,7 @@ export const createServer = (config: any): Server => {
 
   // Register static file serving with caching
   server.app.register(fastifyStatic, {
-    root: join(__dirname, "..", "ui", "dist"),
+    root: join(__dirname, "..", "dist"),
     prefix: "/ui/",
     maxAge: "1h",
   });

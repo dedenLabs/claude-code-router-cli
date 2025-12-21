@@ -1,8 +1,8 @@
-# Claude Code Router CLI v2.0.4
+# Claude Code Router CLI v2.0.5
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-2.0.4-blue.svg)](https://github.com/dedenlabs/claude-code-router-cli)
+[![Version](https://img.shields.io/badge/version-2.0.5-blue.svg)](https://github.com/dedenlabs/claude-code-router-cli)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
@@ -622,6 +622,16 @@ export class MyTransformer extends BaseTransformer {
  
 
 ## 📈 版本历史
+
+### v2.0.5 (2025-12-21)
+
+**🔧 UI修复版本**
+
+**✅ 静态文件服务修复**
+- 修复UI无法加载显示的问题
+- 将静态文件服务目录从原来路径改为 `dist` 目录
+- 确保Web UI界面正常访问和显示
+- 优化构建流程，确保UI文件正确输出
 
 ### v2.0.4 (2025-12-17)
 
