@@ -111,9 +111,9 @@ export class UnifiedRouter implements IUnifiedRouter {
     // 强制设置思考模式为 true (需要对象格式)
     // if (req.body) {
     //   req.body.thinking = { enabled: true };
-    // } 
+    // }
     this.logger.info(
-      `📝 用户请求开始 [${timeStr}] 🎯 目标模型: ${requestedModel || "default"}  ${req.body?.thinking?.enabled && "💡模型选择思考:启用" || ""} ${req.body?.thinking ? JSON.stringify(req.body?.thinking) : ""}`,
+      `📝 用户请求开始 [${timeStr}] 🎯 目标模型: ${requestedModel || "default"}  ${(req.body?.thinking?.enabled && "💡模型选择思考:启用") || ""} ${req.body?.thinking ? JSON.stringify(req.body?.thinking) : ""}`,
     );
     this.logger.info(`🔗 请求ID: ${req.sessionId || "unknown"}`);
 
@@ -148,7 +148,9 @@ export class UnifiedRouter implements IUnifiedRouter {
           ? matchResult.action.route
           : this.config.defaultRoute;
 
-      let finalMatchedRule = matchResult.matched ? (matchResult.ruleName || "默认路由") : "默认路由";
+      let finalMatchedRule = matchResult.matched
+        ? matchResult.ruleName || "默认路由"
+        : "默认路由";
 
       // 变量替换处理
       if (finalRoute.includes("${")) {
@@ -161,8 +163,16 @@ export class UnifiedRouter implements IUnifiedRouter {
       } else {
         // 如果没有变量替换但匹配到了directMapping规则，也需要检查是否需要代号映射
         const requestedModel = req.body?.model;
-        if (matchResult.matched && matchResult.ruleName === 'directMapping' && requestedModel && !requestedModel.includes(',')) {
-          const mappedRoute = this.mapDirectModelToProvider(requestedModel, req);
+        if (
+          matchResult.matched &&
+          matchResult.ruleName === "directMapping" &&
+          requestedModel &&
+          !requestedModel.includes(",")
+        ) {
+          const mappedRoute = this.mapDirectModelToProvider(
+            requestedModel,
+            req,
+          );
           if (mappedRoute) {
             finalRoute = mappedRoute;
             // 只有当映射结果就是默认路由时，才将matchedRule设置为"默认路由"
@@ -178,6 +188,9 @@ export class UnifiedRouter implements IUnifiedRouter {
           }
         }
       }
+
+      // 自动补全provider的模型信息（如果route只包含provider名称）
+      finalRoute = this.resolveProviderModel(finalRoute, req, context, true);
 
       // 生成缓存键（使用最终的路由结果）
       const cacheKey = this.generateCacheKey(req, tokenCount, finalRoute);
@@ -465,12 +478,14 @@ export class UnifiedRouter implements IUnifiedRouter {
             condition.operator === "exists"
               ? fieldValue !== undefined && fieldValue !== null
               : condition.operator === "contains"
-                ? fieldValue !== undefined && fieldValue !== null && String(fieldValue).includes(condition.value)
+                ? fieldValue !== undefined &&
+                  fieldValue !== null &&
+                  String(fieldValue).includes(condition.value)
                 : this.compareValues(
-                  fieldValue,
-                  condition.value,
-                  condition.operator || "eq",
-                );
+                    fieldValue,
+                    condition.value,
+                    condition.operator || "eq",
+                  );
           break;
 
         case "custom":
@@ -704,7 +719,7 @@ export class UnifiedRouter implements IUnifiedRouter {
         processedRoute = this.config.defaultRoute;
       }
     }
- 
+
     // 处理 ${subagent} - 从系统消息中提取的子代理模型
     if (processedRoute.includes("${subagent}")) {
       // 尝试从所有系统消息中查找子代理模型标记
@@ -712,7 +727,8 @@ export class UnifiedRouter implements IUnifiedRouter {
       const systemMessages = req.body?.system || [];
 
       for (let i = 0; i < systemMessages.length; i++) {
-        const content = systemMessages[i]?.content || systemMessages[i]?.text || "";
+        const content =
+          systemMessages[i]?.content || systemMessages[i]?.text || "";
         if (content.includes("<CCR-SUBAGENT-MODEL>")) {
           systemText = content;
           break;
@@ -768,7 +784,9 @@ export class UnifiedRouter implements IUnifiedRouter {
         return processedRoute;
       }
       // 对于其他变量，回退到默认路由
-      this.logger.warn(`变量替换未完成，仍包含未替换的变量: ${processedRoute}，使用默认路由`);
+      this.logger.warn(
+        `变量替换未完成，仍包含未替换的变量: ${processedRoute}，使用默认路由`,
+      );
       return this.config.defaultRoute;
     }
 
@@ -776,67 +794,112 @@ export class UnifiedRouter implements IUnifiedRouter {
   }
 
   /**
-   * 将provider作为代号，映射到对应的model模型
+   * 将provider名称或模型名称转换为完整的 "provider,model" 路由格式
+   *
+   * 支持两种输入模式：
+   * 1. 模型名映射：如 "claude-3.5-sonnet" → "openrouter,claude-3.5-sonnet"
+   * 2. Provider名称补全：如 "haiku-glm" → "haiku-glm,glm-4.7"
+   *
+   * @param input - 模型名称或provider名称
+   * @param req - 请求对象，包含config.Providers配置
+   * @param context - 路由上下文（可选）
+   * @param fallbackToInput - 失败时是否返回原输入（用于规则路由），默认false
+   * @returns 完整的 "provider,model" 路由，或null表示无法映射
    */
-  private mapDirectModelToProvider(modelName: string, req: any): string | null {
-    const providers = req.config?.Providers || [];
+  private resolveProviderModel(
+    input: string,
+    req: any,
+    context?: RouteContext,
+    fallbackToInput = false,
+  ): string | null {
+    // 如果输入已经是完整的 "provider,model" 格式，直接返回
+    if (input.includes(",")) {
+      return input;
+    }
 
-    this.logger.debug("尝试代号模型映射", {
-      modelName,
+    const providers = req.config?.Providers || [];
+    this.logger.debug("尝试provider模型解析", {
+      input,
       providersCount: providers.length,
     });
 
-    // 第一步：遍历providers，查找匹配的模型
+    // 第一步：尝试作为模型名查找（遍历所有providers的models数组）
     for (const provider of providers) {
       // 检查models数组
       if (provider.models && Array.isArray(provider.models)) {
-        if (provider.models.includes(modelName)) {
-          const mappedRoute = `${provider.name},${provider.models[0]}`;
+        if (provider.models.includes(input)) {
+          const route = `${provider.name},${provider.models[0]}`;
           this.logger.info("✓ 模型名匹配", {
-            request: modelName,
-            route: mappedRoute,
+            request: input,
+            route: route,
           });
-          return mappedRoute;
+          return route;
         }
       }
 
       // 检查单个model字段
-      if (provider.model === modelName) {
-        const mappedRoute = `${provider.name},${provider.model}`;
+      if (provider.model === input) {
+        const route = `${provider.name},${provider.model}`;
         this.logger.info("✓ 模型名匹配", {
-          request: modelName,
-          route: mappedRoute,
+          request: input,
+          route: route,
         });
-        return mappedRoute;
+        return route;
       }
     }
 
-    // 第二步：如果没有找到模型，尝试通过 provider 名称匹配
-    this.logger.debug("未找到代号模型映射，尝试通过 provider 名称匹配", {
-      modelName,
-    });
+    // 第二步：尝试作为provider名称查找
+    this.logger.debug("未找到模型名，尝试作为provider名称匹配", { input });
     const matchedProvider = providers.find(
-      (p: any) => p.name.toLowerCase() === modelName.toLowerCase(),
+      (p: any) => p.name.toLowerCase() === input.toLowerCase(),
     );
 
-    if (matchedProvider) {
-      // 找到名称匹配的 provider，使用其默认模型
-      const defaultModel = matchedProvider.models?.[0] || matchedProvider.model;
-      if (defaultModel) {
-        const mappedRoute = `${matchedProvider.name},${defaultModel}`;
-        // this.logger.info('✓ Provider 名称匹配', { request: modelName, route: mappedRoute });
-        return mappedRoute;
-      } else {
-        this.logger.error(`Provider '${matchedProvider.name}' 没有配置模型！`, {
-          providerName: matchedProvider.name,
-        });
-        return null;
+    if (!matchedProvider) {
+      this.logger.debug(`未找到provider '${input}' 的配置`);
+      if (fallbackToInput) {
+        this.logger.debug(`fallback模式：保持原样返回 ${input}`);
+        return input;
       }
+      return null;
     }
 
-    // 未找到任何映射，返回null让调用者处理
-    this.logger.debug(`未找到模型 '${modelName}' 的映射，返回null`);
+    // 第三步：获取该provider的模型（优先defaultModel，备选第一个模型）
+    let model: string | undefined;
+
+    // 优先：defaultModel字段
+    if (matchedProvider.defaultModel) {
+      model = matchedProvider.defaultModel;
+      this.logger.info(`✓ 使用provider '${input}' 的默认模型: ${model}`);
+    }
+    // 备选：models数组的第一个
+    else if (matchedProvider.models && matchedProvider.models.length > 0) {
+      model = matchedProvider.models[0];
+      this.logger.info(`✓ 使用provider '${input}' 的第一个模型: ${model}`);
+    }
+    // 备选：单个model字段
+    else if (matchedProvider.model) {
+      model = matchedProvider.model;
+      this.logger.info(`✓ 使用provider '${input}' 的模型: ${model}`);
+    }
+
+    if (model) {
+      return `${matchedProvider.name},${model}`;
+    }
+
+    this.logger.error(`Provider '${input}' 没有配置任何模型`);
+    if (fallbackToInput) {
+      this.logger.debug(`fallback模式：保持原样返回 ${input}`);
+      return input;
+    }
     return null;
+  }
+
+  /**
+   * 将provider作为代号，映射到对应的model模型（旧方法别名）
+   * @deprecated 使用 resolveProviderModel 替代
+   */
+  private mapDirectModelToProvider(modelName: string, req: any): string | null {
+    return this.resolveProviderModel(modelName, req);
   }
 
   /**
@@ -987,13 +1050,13 @@ export function migrateLegacyConfig(
       condition: {
         type: "tokenThreshold",
         value: legacy.longContextThreshold || 60000,
-        operator: "gt"
+        operator: "gt",
       },
       action: {
         route: legacy.longContext,
         transformers: [],
-        description: "长上下文路由：基于token阈值选择模型"
-      }
+        description: "长上下文路由：基于token阈值选择模型",
+      },
     });
   }
 
@@ -1006,13 +1069,13 @@ export function migrateLegacyConfig(
       type: "fieldExists",
       field: "system.1.text",
       operator: "contains",
-      value: "<CCR-SUBAGENT-MODEL>"
+      value: "<CCR-SUBAGENT-MODEL>",
     },
     action: {
       route: "${subagent}",
       transformers: [],
-      description: "子代理路由：通过特殊标记选择模型"
-    }
+      description: "子代理路由：通过特殊标记选择模型",
+    },
   });
 
   // 后台模型规则（Haiku）
@@ -1024,13 +1087,13 @@ export function migrateLegacyConfig(
       condition: {
         type: "modelContains",
         value: "haiku",
-        operator: "contains"
+        operator: "contains",
       },
       action: {
         route: legacy.background,
         transformers: [],
-        description: "后台路由：Haiku模型自动使用轻量级模型"
-      }
+        description: "后台路由：Haiku模型自动使用轻量级模型",
+      },
     });
   }
 
@@ -1043,13 +1106,13 @@ export function migrateLegacyConfig(
       condition: {
         type: "toolExists",
         value: "web_search",
-        operator: "exists"
+        operator: "exists",
       },
       action: {
         route: legacy.webSearch,
         transformers: [],
-        description: "网络搜索路由：检测到web_search工具时使用特定模型"
-      }
+        description: "网络搜索路由：检测到web_search工具时使用特定模型",
+      },
     });
   }
 
@@ -1062,13 +1125,13 @@ export function migrateLegacyConfig(
       condition: {
         type: "fieldExists",
         field: "thinking",
-        operator: "exists"
+        operator: "exists",
       },
       action: {
         route: legacy.think,
         transformers: [],
-        description: "思考模式路由：检测thinking参数时使用特定模型"
-      }
+        description: "思考模式路由：检测thinking参数时使用特定模型",
+      },
     });
   }
 
@@ -1079,13 +1142,13 @@ export function migrateLegacyConfig(
     enabled: true,
     condition: {
       type: "custom",
-      customFunction: "directModelMapping"
+      customFunction: "directModelMapping",
     },
     action: {
       route: "${mappedModel}",
       transformers: [],
-      description: "代号映射：将provider作为代号，映射到对应的model模型"
-    }
+      description: "代号映射：将provider作为代号，映射到对应的model模型",
+    },
   });
 
   // 用户指定模型规则（包含逗号的provider,model格式）
@@ -1095,13 +1158,13 @@ export function migrateLegacyConfig(
     enabled: true,
     condition: {
       type: "custom",
-      customFunction: "modelContainsComma"
+      customFunction: "modelContainsComma",
     },
     action: {
       route: "${userModel}",
       transformers: [],
-      description: "用户指定路由：用户在请求中直接指定provider,model格式"
-    }
+      description: "用户指定路由：用户在请求中直接指定provider,model格式",
+    },
   });
 
   return {
@@ -1111,17 +1174,17 @@ export function migrateLegacyConfig(
     cache: {
       enabled: true,
       maxSize: 1000,
-      ttl: 300000
+      ttl: 300000,
     },
     debug: {
       enabled: false,
       logLevel: "info",
       logToFile: true,
-      logToConsole: true
+      logToConsole: true,
     },
     contextThreshold: {
       default: 1000,
-      longContext: legacy.longContextThreshold || 60000
-    }
+      longContext: legacy.longContextThreshold || 60000,
+    },
   };
 }
