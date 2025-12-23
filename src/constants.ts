@@ -79,7 +79,7 @@ export const DEFAULT_CONFIG = {
       "api_base_url": "https://open.bigmodel.cn/api/anthropic/v1/messages",
       "api_key": "YOUR_GLM_API_KEY",
       "models": [
-        "glm-4.6"
+        "glm-4.7"
       ],
       "transformer": {
         "use": [
@@ -92,7 +92,7 @@ export const DEFAULT_CONFIG = {
       "api_base_url": "https://open.bigmodel.cn/api/anthropic/v1/messages",
       "api_key": "YOUR_GLM_API_KEY",
       "models": [
-        "glm-4.6"
+        "glm-4.7"
       ],
       "transformer": {
         "use": [
@@ -105,7 +105,7 @@ export const DEFAULT_CONFIG = {
       "api_base_url": "https://api.z.ai/api/coding/paas/v4/chat/completions",
       "api_key": "YOUR_GLM_API_KEY",
       "models": [
-        "glm-4.6"
+        "glm-4.7"
       ],
       "transformer": {
         "use": [
@@ -133,6 +133,48 @@ export const DEFAULT_CONFIG = {
     "engine": "unified",
     "defaultRoute": "sonnet",
     "rules": [
+      {
+        "name": "haiku模型替换规则",
+        "condition": {
+          "type": "modelContains",
+          "value": "haiku",
+          "operator": "contains"
+        },
+        "action": {
+          "route": "haiku-minimax",
+          "description": "模型替换任意模型规则"
+        },
+        "priority": 205,
+        "enabled": true
+      },
+        {
+        "name": "sonnet模型替换规则",
+        "condition": {
+          "type": "modelContains",
+          "value": "sonnet",
+          "operator": "contains"
+        },
+        "action": {
+          "route": "sonnet-minimax",
+          "description": "模型替换任意模型规则"
+        },
+        "priority": 205,
+        "enabled": true
+      },
+      {
+        "name": "opus模型替换规则",
+        "condition": {
+          "type": "modelContains",
+          "value": "opus",
+          "operator": "contains"
+        },
+        "action": {
+          "route": "opus-minimax",
+          "description": "模型替换任意模型规则"
+        },
+        "priority": 205,
+        "enabled": true
+      },
       {
         "name": "用户指定规则",
         "condition": {

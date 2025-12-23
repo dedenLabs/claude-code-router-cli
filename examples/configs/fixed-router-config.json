@@ -19,6 +19,48 @@
   ],
   "Providers": [
     {
+      "name": "haiku模型替换规则",
+      "condition": {
+        "type": "modelContains",
+        "value": "haiku",
+        "operator": "contains"
+      },
+      "action": {
+        "route": "haiku-minimax",
+        "description": "模型替换任意模型规则"
+      },
+      "priority": 205,
+      "enabled": true
+    },
+      {
+      "name": "sonnet模型替换规则",
+      "condition": {
+        "type": "modelContains",
+        "value": "sonnet",
+        "operator": "contains"
+      },
+      "action": {
+        "route": "sonnet-minimax",
+        "description": "模型替换任意模型规则"
+      },
+      "priority": 205,
+      "enabled": true
+    },
+    {
+      "name": "opus模型替换规则",
+      "condition": {
+        "type": "modelContains",
+        "value": "opus",
+        "operator": "contains"
+      },
+      "action": {
+        "route": "opus-minimax",
+        "description": "模型替换任意模型规则"
+      },
+      "priority": 205,
+      "enabled": true
+    },
+    {
       "name": "haiku-minimax",
       "api_base_url": "https://api.minimaxi.com/anthropic/v1/messages",
       "api_key": "YOUR_MINIMAX_API_KEY",

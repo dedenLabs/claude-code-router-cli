@@ -112,6 +112,35 @@ ccr start
 ccr start -b
 ```
 
+**修改配置文件：**
+
+启动服务后会创建默认配置，您可以通过两种方式修改：
+
+1. **手动编辑**：修改 `~/.claude-code-router/config.json` 配置文件
+2. **可视化界面**：访问 http://localhost:3456/ui/ 实时编辑路由规则和替换密钥
+
+推荐使用模型替换规则，只需修改路由映射，所有IDE工具无需改动：
+
+```json
+{
+  "Router": {
+    "rules": [
+      {
+        "name": "haiku模型替换规则",
+        "condition": {
+          "type": "modelContains",
+          "value": "haiku"
+        },
+        "action": {
+          "route": "haiku-XXX"
+        },
+        "priority": 205
+      }
+    ]
+  }
+}
+```
+
 **配置 Claude 环境变量：**
 ```bash
 # 编辑 Claude 配置文件
@@ -124,9 +153,9 @@ ccr start -b
     "ANTHROPIC_AUTH_TOKEN": "sk-anything",
     "API_TIMEOUT_MS": "3000000",
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
-    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "haiku-glm",
-    "ANTHROPIC_DEFAULT_SONNET_MODEL": "sonnet-minimax",
-    "ANTHROPIC_DEFAULT_OPUS_MODEL": "opus-minimax"
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "haiku",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "sonnet",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "opus"
   },
   "model": "sonnet"
 }
@@ -319,6 +348,49 @@ function isBusinessHours(context) {
     "engine": "unified",
     "defaultRoute": "sonnet-minimax",
     "rules": [
+      {
+        "name": "haiku模型替换规则",
+        "condition": {
+          "type": "modelContains",
+          "value": "haiku",
+          "operator": "contains"
+        },
+        "action": {
+          "route": "haiku-minimax",
+          "description": "模型替换任意模型规则"
+        },
+        "priority": 205,
+        "enabled": true
+      },
+        {
+        "name": "sonnet模型替换规则",
+        "condition": {
+          "type": "modelContains",
+          "value": "sonnet",
+          "operator": "contains"
+        },
+        "action": {
+          "route": "sonnet-minimax",
+          "description": "模型替换任意模型规则"
+        },
+        "priority": 205,
+        "enabled": true
+      },
+      {
+        "name": "opus模型替换规则",
+        "condition": {
+          "type": "modelContains",
+          "value": "opus",
+          "operator": "contains"
+        },
+        "action": {
+          "route": "opus-minimax",
+          "description": "模型替换任意模型规则"
+        },
+        "priority": 205,
+        "enabled": true
+      },
+     //---------以下规则不是必须的-----------
       {
         "name": "用户指定规则",
         "priority": 200,
