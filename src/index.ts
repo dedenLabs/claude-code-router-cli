@@ -37,7 +37,7 @@ try {
     };
   }
 } catch (error) {
-  packageInfo = { name: "Claude Code Router CLI", version: "2.0.0" };
+  packageInfo = { name: "Claude Code Router CLI", version: "2.0.6" };
 }
 
 // 格式化包名
@@ -507,7 +507,7 @@ async function run(options: RunOptions = {}) {
     const formattedName = packageInfo
       ? formatPackageName(packageInfo.name)
       : "Claude Code Router CLI";
-    const version = packageInfo?.version || "2.0.0";
+    const version = packageInfo?.version || "2.0.6";
 
     console.log(`\n🚀 ${formattedName} v${version} is running on ${url}`);
 

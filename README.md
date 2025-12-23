@@ -1,8 +1,8 @@
-# Claude Code Router CLI v2.0.5
+# Claude Code Router CLI v2.0.6
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-2.0.5-blue.svg)](https://github.com/dedenlabs/claude-code-router-cli)
+[![Version](https://img.shields.io/badge/version-2.0.6-blue.svg)](https://github.com/dedenlabs/claude-code-router-cli)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
@@ -114,10 +114,10 @@ ccr start -b
 
 **修改配置文件：**
 
-启动服务后会创建默认配置，您可以通过两种方式修改：
+启动服务后会创建默认配置，您可以通过两种方式编辑路由规则和替换密钥：
 
 1. **手动编辑**：修改 `~/.claude-code-router/config.json` 配置文件
-2. **可视化界面**：访问 http://localhost:3456/ui/ 实时编辑路由规则和替换密钥
+2. **可视化界面**：访问 http://localhost:3456/ui/ 
 
 推荐使用模型替换规则，只需修改路由映射，所有IDE工具无需改动：
 
@@ -694,6 +694,22 @@ export class MyTransformer extends BaseTransformer {
  
 
 ## 📈 版本历史
+
+### v2.0.6 (2025-12-23)
+
+**🎯 正式版本发布**
+
+**✅ 路由规则优化**
+- 修复规则路由provider模型自动补全功能
+- 优化统一路由引擎的字段兼容性处理
+- 增强路由决策的准确性和稳定性
+- 完善调试日志和错误处理机制
+
+**📚 文档完善**
+- 修复README文档中的版本徽章显示错误
+- 完善统一路由引擎使用指南
+- 添加更多配置示例和使用场景
+- 优化文档结构和用户体验
 
 ### v2.0.5 (2025-12-21)
 
