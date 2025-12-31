@@ -619,10 +619,41 @@ export class UnifiedRouter implements IUnifiedRouter {
       case "modelContainsComma":
         return context.req?.body?.model?.includes(",") || false;
 
-      case "directModelMapping":
+      case "directProviderMapping":
+      case "directModelMapping": // 兼容旧版本名称
         const model = context.req?.body?.model;
-        // 允许所有非逗号分隔的简单模型名通过（包括空模型）
-        return model !== undefined && !model.includes(",");
+        if (!model || model.includes(",")) {
+          return false;
+        }
+
+        // 验证模型或provider是否存在于配置中
+        const providers = context.req?.config?.Providers || [];
+        const modelStr = String(model).toLowerCase();
+
+        // 1. 尝试作为模型名查找（遍历所有providers的models数组）
+        for (const provider of providers) {
+          if (provider.models && Array.isArray(provider.models)) {
+            if (
+              provider.models.some((m) => String(m).toLowerCase() === modelStr)
+            ) {
+              return true;
+            }
+          }
+          if (String(provider.model || "").toLowerCase() === modelStr) {
+            return true;
+          }
+        }
+
+        // 2. 尝试作为provider名称查找
+        const matchedProvider = providers.find(
+          (p: any) => String(p.name).toLowerCase() === modelStr,
+        );
+        if (matchedProvider) {
+          return true;
+        }
+
+        // 模型和provider都不存在，匹配失败
+        return false;
 
       default:
         this.logger.warn(`未知的自定义条件函数: ${customFunction}`);
@@ -776,18 +807,19 @@ export class UnifiedRouter implements IUnifiedRouter {
       });
     }
 
-    // 如果还有未替换的变量，根据变量类型决定处理方式
+    // 如果还有未替换的变量，保持原样返回，让上游调用方决定是否使用默认路由
     if (processedRoute.includes("${")) {
-      // 对于 ${subagent} 变量，如果替换失败则保持原样，让上游逻辑处理
+      // 对于 ${subagent} 变量，如果替换失败则保持原样
       if (processedRoute.includes("${subagent}")) {
         this.logger.debug("${subagent} 变量替换失败，保持原样");
         return processedRoute;
       }
-      // 对于其他变量，回退到默认路由
-      this.logger.warn(
-        `变量替换未完成，仍包含未替换的变量: ${processedRoute}，使用默认路由`,
+      // 对于其他变量（如 ${mappedModel}、${userModel}），同样保持原样
+      // 不回退到默认路由，由调用方根据规则匹配情况决定处理方式
+      this.logger.debug(
+        `变量替换未完成，仍包含未替换的变量: ${processedRoute}，保持原样返回`,
       );
-      return this.config.defaultRoute;
+      return processedRoute;
     }
 
     return processedRoute;
@@ -1135,19 +1167,19 @@ export function migrateLegacyConfig(
     });
   }
 
-  // 代号模型映射规则
+  // Provider直接映射规则（兼容旧版本配置）
   rules.push({
     name: "directMapping",
     priority: 50,
     enabled: true,
     condition: {
       type: "custom",
-      customFunction: "directModelMapping",
+      customFunction: "directProviderMapping", // 新名称，兼容旧版本使用 directModelMapping
     },
     action: {
       route: "${mappedModel}",
       transformers: [],
-      description: "代号映射：将provider作为代号，映射到对应的model模型",
+      description: "Provider映射：验证并映射provider名称到其默认模型",
     },
   });
 
