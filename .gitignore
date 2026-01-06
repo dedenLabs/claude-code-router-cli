@@ -10,3 +10,4 @@ tsconfig.tsbuildinfo
 backups
 .agent
 .npmrc
+origin

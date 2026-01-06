@@ -1,8 +1,8 @@
-# Claude Code Router CLI v2.0.7
+# Claude Code Router CLI v2.0.8
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-2.0.7-blue.svg)](https://github.com/dedenlabs/claude-code-router-cli)
+[![Version](https://img.shields.io/badge/version-2.0.8-blue.svg)](https://github.com/dedenlabs/claude-code-router-cli)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
@@ -694,6 +694,23 @@ export class MyTransformer extends BaseTransformer {
  
 
 ## 📈 版本历史
+
+### v2.0.8 (2026-01-07)
+
+**🐛 问题修复**
+
+- fix: 修复 Windows 代理环境下 localhost 请求失败问题
+- 错误信息: `fetch failed TypeError: fetch failed`
+- 添加 NO_PROXY 环境变量配置
+- 创建统一请求工具 sendUnifiedRequest
+- 添加 esbuild 代理注入机制
+
+### v2.0.7 (2025-12-28)
+
+**🐛 问题修复**
+
+- fix: 修复路由条件验证逻辑 bug
+- 优化统一路由引擎的字段兼容性处理
 
 ### v2.0.6 (2025-12-23)
 

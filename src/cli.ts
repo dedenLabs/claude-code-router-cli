@@ -1,4 +1,21 @@
 #!/usr/bin/env node
+// 必须在任何 import 之前设置 NO_PROXY，解决代理环境下 localhost 请求失败问题
+// Windows 系统代理存储在注册表中，Node.js 不会自动读取
+if (!process.env.NO_PROXY) {
+  process.env.NO_PROXY =
+    "localhost,127.0.0.1,0.0.0.0,::1,192.168.*,10.*,172.16-31.*";
+} else {
+  const noProxy = process.env.NO_PROXY;
+  const additions = [];
+  if (!noProxy.includes("localhost")) additions.push("localhost");
+  if (!noProxy.includes("127.0.0.1")) additions.push("127.0.0.1");
+  if (!noProxy.includes("0.0.0.0")) additions.push("0.0.0.0");
+  if (!noProxy.includes("::1")) additions.push("::1");
+  if (additions.length > 0) {
+    process.env.NO_PROXY = noProxy + "," + additions.join(",");
+  }
+}
+
 import { run } from "./index";
 import { showStatus } from "./utils/status";
 import { executeCodeCommand } from "./utils/codeCommand";
@@ -75,7 +92,11 @@ async function main() {
       {
         // Parse arguments for start command
         const args = process.argv.slice(3);
-        const hasBackgroundFlag = args.includes('--background') || args.includes('-b') || args.includes('--daemon') || args.includes('-d');
+        const hasBackgroundFlag =
+          args.includes("--background") ||
+          args.includes("-b") ||
+          args.includes("--daemon") ||
+          args.includes("-d");
 
         if (hasBackgroundFlag) {
           // Start in background mode
@@ -154,9 +175,9 @@ async function main() {
         console.log("Service not running, starting service...");
         const cliPath = join(__dirname, "cli.js");
         const startProcess = spawn("node", [cliPath, "start"], {
-            detached: true,
-            stdio: "ignore",
-          });
+          detached: true,
+          stdio: "ignore",
+        });
 
         // let errorMessage = "";
         // startProcess.stderr?.on("data", (data) => {

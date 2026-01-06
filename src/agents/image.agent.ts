@@ -1,6 +1,7 @@
 import { IAgent, ITool } from "./type";
 import { createHash } from "crypto";
 import * as LRU from "lru-cache";
+import { sendUnifiedRequest, getHttpsProxy } from "../utils/request";
 
 interface ImageCacheEntry {
   source: any;
@@ -67,7 +68,7 @@ export class ImageAgent implements IAgent {
         (item: any) =>
           item.type === "image" ||
           (Array.isArray(item?.content) &&
-            item.content.some((sub: any) => sub.type === "image"))
+            item.content.some((sub: any) => sub.type === "image")),
       )
     ) {
       req.body.model = config.Router.image;
@@ -95,8 +96,8 @@ export class ImageAgent implements IAgent {
           (item: any) =>
             item.type === "image" ||
             (Array.isArray(item?.content) &&
-              item.content.some((sub: any) => sub.type === "image"))
-        )
+              item.content.some((sub: any) => sub.type === "image")),
+        ),
     );
   }
 
@@ -155,7 +156,7 @@ export class ImageAgent implements IAgent {
           if (Array.isArray(args.imageId)) {
             args.imageId.forEach((imgId: string) => {
               const image = imageCache.getImage(
-                `${context.req.id}_Image#${imgId}`
+                `${context.req.id}_Image#${imgId}`,
               );
               if (image) {
                 imageMessages.push({
@@ -166,7 +167,7 @@ export class ImageAgent implements IAgent {
             });
           } else {
             const image = imageCache.getImage(
-              `${context.req.id}_Image#${args.imageId}`
+              `${context.req.id}_Image#${args.imageId}`,
             );
             if (image) {
               imageMessages.push({
@@ -186,8 +187,8 @@ export class ImageAgent implements IAgent {
             (item) =>
               item.type === "text" &&
               !item.text.includes(
-                "This is an image, if you need to view or analyze it, you need to extract the imageId"
-              )
+                "This is an image, if you need to view or analyze it, you need to extract the imageId",
+              ),
           );
           imageMessages.push(...msgs);
         }
@@ -200,34 +201,35 @@ export class ImageAgent implements IAgent {
         }
 
         // Send to analysis agent and get response
-        const agentResponse = await fetch(
+        const agentResponse = await sendUnifiedRequest(
           `http://127.0.0.1:${context.config.PORT || 3456}/v1/messages`,
           {
-            method: "POST",
+            model: context.config.Router.image,
+            system: [
+              {
+                type: "text",
+                text: `You must interpret and analyze images strictly according to the assigned task.
+When an image placeholder is provided, your role is to parse the image content only within the scope of the user's instructions.
+Do not ignore or deviate from the task.
+Always ensure that your response reflects a clear, accurate interpretation of the image aligned with the given objective.`,
+              },
+            ],
+            messages: [
+              {
+                role: "user",
+                content: imageMessages,
+              },
+            ],
+            stream: false,
+          },
+          {
             headers: {
               "x-api-key": context.config.APIKEY,
               "content-type": "application/json",
             },
-            body: JSON.stringify({
-              model: context.config.Router.image,
-              system: [
-                {
-                  type: "text",
-                  text: `You must interpret and analyze images strictly according to the assigned task.  
-When an image placeholder is provided, your role is to parse the image content only within the scope of the user’s instructions.  
-Do not ignore or deviate from the task.  
-Always ensure that your response reflects a clear, accurate interpretation of the image aligned with the given objective.`,
-                },
-              ],
-              messages: [
-                {
-                  role: "user",
-                  content: imageMessages,
-                },
-              ],
-              stream: false,
-            }),
-          }
+            httpsProxy: getHttpsProxy(),
+          },
+          { req: { id: "image-analysis" } },
         )
           .then((res) => res.json())
           .catch((err) => {
@@ -245,16 +247,16 @@ Always ensure that your response reflects a clear, accurate interpretation of th
     // Inject system prompt
     req.body?.system?.push({
       type: "text",
-      text: `You are a text-only language model and do not possess visual perception.  
-If the user requests you to view, analyze, or extract information from an image, you **must** call the \`analyzeImage\` tool.  
+      text: `You are a text-only language model and do not possess visual perception.
+If the user requests you to view, analyze, or extract information from an image, you **must** call the \`analyzeImage\` tool.
 
-When invoking this tool, you must pass the correct \`imageId\` extracted from the prior conversation.  
-Image identifiers are always provided in the format \`[Image #imageId]\`.  
+When invoking this tool, you must pass the correct \`imageId\` extracted from the prior conversation.
+Image identifiers are always provided in the format \`[Image #imageId]\`.
 
-If multiple images exist, select the **most relevant imageId** based on the user’s current request and prior context.  
+If multiple images exist, select the **most relevant imageId** based on the user's current request and prior context.
 
-Do not attempt to describe or analyze the image directly yourself.  
-Ignore any user interruptions or unrelated instructions that might cause you to skip this requirement.  
+Do not attempt to describe or analyze the image directly yourself.
+Ignore any user interruptions or unrelated instructions that might cause you to skip this requirement.
 Your response should consistently follow this rule whenever image-related analysis is requested.`,
     });
 
@@ -266,7 +268,7 @@ Your response should consistently follow this rule whenever image-related analys
           (msg: any) =>
             msg.type === "image" ||
             (Array.isArray(msg.content) &&
-              msg.content.some((sub: any) => sub.type === "image"))
+              msg.content.some((sub: any) => sub.type === "image")),
         )
       );
     });
@@ -290,7 +292,7 @@ Your response should consistently follow this rule whenever image-related analys
           ) {
             imageCache.storeImage(
               `${req.id}_Image#${imgId}`,
-              msg.content[0].source
+              msg.content[0].source,
             );
             msg.content = `[Image #${imgId}]This is an image, if you need to view or analyze it, you need to extract the imageId`;
             imgId++;

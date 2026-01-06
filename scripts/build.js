@@ -10,7 +10,7 @@ try {
   // Build the main CLI application
   console.log("Building CLI application...");
   execSync(
-    "esbuild src/cli.ts --bundle --platform=node --outfile=dist/cli.js",
+    "esbuild src/cli.ts --bundle --platform=node --outfile=dist/cli.js --inject:src/inject/proxy-bypass.ts",
     { stdio: "inherit" },
   );
 
@@ -60,19 +60,18 @@ try {
     });
   }
 
-
   // Build the UI
-  console.log('Building UI...');
+  console.log("Building UI...");
   // Check if node_modules exists in ui directory, if not install dependencies
-  if (!fs.existsSync('ui/node_modules')) {
-    console.log('Installing UI dependencies...');
-    execSync('cd ui && npm install', { stdio: 'inherit' });
+  if (!fs.existsSync("ui/node_modules")) {
+    console.log("Installing UI dependencies...");
+    execSync("cd ui && npm install", { stdio: "inherit" });
   }
-  execSync('cd ui && npm run build', { stdio: 'inherit' });
+  execSync("cd ui && npm run build", { stdio: "inherit" });
 
   // Copy the built UI index.html to dist
-  console.log('Copying UI build artifacts...');
-  execSync('shx cp ui/dist/index.html dist/index.html', { stdio: 'inherit' });
+  console.log("Copying UI build artifacts...");
+  execSync("shx cp ui/dist/index.html dist/index.html", { stdio: "inherit" });
 
   console.log("Build completed successfully!");
 } catch (error) {
