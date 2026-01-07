@@ -10,7 +10,7 @@ try {
   // Build the main CLI application
   console.log("Building CLI application...");
   execSync(
-    "esbuild src/cli.ts --bundle --platform=node --outfile=dist/cli.js --inject:src/inject/proxy-bypass.ts",
+    "esbuild src/cli.ts --bundle --platform=node --outfile=dist/cli.js",
     { stdio: "inherit" },
   );
 

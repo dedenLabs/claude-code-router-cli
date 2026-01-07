@@ -24,13 +24,6 @@ import { IAgent } from "./agents/type";
 import agentsManager from "./agents";
 import { EventEmitter } from "node:events";
 
-// 配置本地地址不走代理，解决代理环境下 localhost 请求失败问题
-if (!process.env.NO_PROXY) {
-  process.env.NO_PROXY = "localhost,127.0.0.1,0.0.0.0,::1";
-} else if (!process.env.NO_PROXY.includes("localhost")) {
-  process.env.NO_PROXY += ",localhost,127.0.0.1,0.0.0.0,::1";
-}
-
 // 读取包配置信息
 let packageInfo: { name: string; version: string } | null = null;
 try {
@@ -539,42 +532,3 @@ async function run(options: RunOptions = {}) {
 }
 
 export { run };
-// run();
-
-// Monkey patch: 修复 @musistudio/llms 包内部的 Wf 函数
-// 原始的 Wf 函数没有检查 NO_PROXY 环境变量，导致本地地址请求失败
-// 在模块加载后立即应用此修复
-function patchLlmsPackage() {
-  try {
-    // 等待 @musistudio/llms 包加载后执行
-    const llmsModule = require("@musistudio/llms");
-    if (llmsModule && typeof llmsModule.version === "string") {
-      // 检查是否是需要修复的版本
-      const WfOriginal = llmsModule.Wf;
-      if (typeof WfOriginal === "function") {
-        llmsModule.Wf = function (url, request, config, logger, context) {
-          // 如果 NO_PROXY 包含 localhost/127.0.0.1 且目标是本地地址，则不使用代理
-          const noProxy = (
-            process.env.NO_PROXY ||
-            process.env.no_proxy ||
-            ""
-          ).toLowerCase();
-          const isLocal =
-            noProxy.includes("localhost") &&
-            (url.toString().includes("localhost") ||
-              url.toString().includes("127.0.0.1"));
-          if (isLocal && config.httpsProxy) {
-            const { httpsProxy, ...restConfig } = config;
-            return WfOriginal(url, request, restConfig, logger, context);
-          }
-          return WfOriginal(url, request, config, logger, context);
-        };
-      }
-    }
-  } catch (e) {
-    // 静默失败，不影响主流程
-  }
-}
-
-// 立即执行 patch
-patchLlmsPackage();

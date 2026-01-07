@@ -1,4 +1,4 @@
-import Server from "@musistudio/llms";
+import Server from "./llms/server";
 import { readConfigFile, writeConfigFile, backupConfigFile } from "./utils";
 import { checkForUpdates, performUpdate } from "./utils";
 import { join } from "path";
