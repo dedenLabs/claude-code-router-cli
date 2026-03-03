@@ -1,20 +1,10 @@
-// 动态导入 @musistudio/llms，支持本地 workspace 解析
+// 动态导入 @musistudio/llms
 let Server: any;
 try {
   Server = require("@musistudio/llms").default || require("@musistudio/llms");
-} catch (e) {
-  // 如果 workspace 解析失败，从本地 packages/core 导入
-  const path = require("path");
-  const corePath = path.resolve(
-    __dirname,
-    "..",
-    "packages",
-    "core",
-    "dist",
-    "cjs",
-    "server.cjs",
-  );
-  Server = require(corePath).default || require(corePath);
+} catch (e: any) {
+  console.error("Failed to load @musistudio/llms:", e.message);
+  process.exit(1);
 }
 
 import { readConfigFile, writeConfigFile, backupConfigFile } from "./utils";
