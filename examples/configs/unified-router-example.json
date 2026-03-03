@@ -4,6 +4,17 @@
   "PORT": 3456,
   "APIKEY": "1",
   "API_TIMEOUT_MS": 600000,
+  "plugins": [
+    {
+      "name": "token-speed",
+      "enabled": true,
+      "options": {
+        "reporter": [
+          "console"
+        ]
+      }
+    }
+  ],
   "Providers": [
     {
       "name": "openrouter",
@@ -16,9 +27,13 @@
         "@preset/kimi"
       ],
       "transformer": {
-        "use": ["openrouter"],
+        "use": [
+          "openrouter"
+        ],
         "deepseek/deepseek-chat-v3-0324": {
-          "use": ["tooluse"]
+          "use": [
+            "tooluse"
+          ]
         }
       }
     },
@@ -26,11 +41,18 @@
       "name": "deepseek",
       "api_base_url": "https://api.deepseek.com/chat/completions",
       "api_key": "sk-",
-      "models": ["deepseek-chat", "deepseek-reasoner"],
+      "models": [
+        "deepseek-chat",
+        "deepseek-reasoner"
+      ],
       "transformer": {
-        "use": ["deepseek"],
+        "use": [
+          "deepseek"
+        ],
         "deepseek-chat": {
-          "use": ["tooluse"]
+          "use": [
+            "tooluse"
+          ]
         }
       }
     },
@@ -38,15 +60,34 @@
       "name": "gemini",
       "api_base_url": "https://generativelanguage.googleapis.com/v1beta/models/",
       "api_key": "",
-      "models": ["gemini-2.5-flash", "gemini-2.5-pro"],
+      "models": [
+        "gemini-2.5-flash",
+        "gemini-2.5-pro"
+      ],
       "transformer": {
-        "use": ["gemini"]
+        "use": [
+          "gemini"
+        ]
+      }
+    },
+    {
+      "name": "minimax",
+      "api_base_url": "https://api.minimaxi.com/anthropic/v1/messages",
+      "api_key": "",
+      "models": [
+        "MiniMax-M2.5-highspeed",
+        "MiniMax-M2.5"
+      ],
+      "transformer": {
+        "use": [
+          "Anthropic"
+        ]
       }
     }
   ],
   "Router": {
     "engine": "unified",
-    "defaultRoute": "openrouter,anthropic/claude-3.5-sonnet",
+    "defaultRoute": "minimax",
     "rules": [
       {
         "name": "longContext",

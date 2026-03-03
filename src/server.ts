@@ -1,4 +1,22 @@
-import Server from "./llms/server";
+// 动态导入 @musistudio/llms，支持本地 workspace 解析
+let Server: any;
+try {
+  Server = require("@musistudio/llms").default || require("@musistudio/llms");
+} catch (e) {
+  // 如果 workspace 解析失败，从本地 packages/core 导入
+  const path = require("path");
+  const corePath = path.resolve(
+    __dirname,
+    "..",
+    "packages",
+    "core",
+    "dist",
+    "cjs",
+    "server.cjs",
+  );
+  Server = require(corePath).default || require(corePath);
+}
+
 import { readConfigFile, writeConfigFile, backupConfigFile } from "./utils";
 import { checkForUpdates, performUpdate } from "./utils";
 import { join } from "path";

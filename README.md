@@ -1,8 +1,8 @@
-# Claude Code Router CLI v2.0.8
+# Claude Code Router CLI v2.0.8-beta.5
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-2.0.8-blue.svg)](https://github.com/dedenlabs/claude-code-router-cli)
+[![Version](https://img.shields.io/badge/version-2.0.8--beta.5-blue.svg)](https://github.com/dedenlabs/claude-code-router-cli)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
@@ -86,6 +86,37 @@ ccr migrate
 
 ### 🎛️ GLM思考模式 (GLM Thinking)
 内置GLM模型思考转换器，提升推理质量
+
+### 📈 Token 速度监控 (Token Speed Monitor)
+实时监控流式输出的 token 生成速度，提供直观的可视化展示。
+
+**启用方式**：在配置文件中添加：
+```json
+{
+  "plugins": [
+    {
+      "name": "token-speed",
+      "enabled": true,
+      "options": {
+        "reporter": ["console"]
+      }
+    }
+  ]
+}
+```
+
+**效果示例**：
+```
+[Token 速度] Token: 347 | Time: 11.92s | TTFT: 7931 | 104 tps | █████████░ | ⚡ 极速
+[Token 速度] [完成] Token: 2235 | Time: 45.41s | TTFT: 7931 | 49 tps | █████░░░░░ | 🚀 快速
+```
+
+**速度等级**：
+- 🦎 慢速: < 20 tps
+- 🐢 中等: 20-40 tps
+- 🚀 快速: 40-80 tps
+- ⚡ 极速: 80-120 tps
+- 💖 超级极速: > 120 tps
 
 ---
 
@@ -694,6 +725,21 @@ export class MyTransformer extends BaseTransformer {
  
 
 ## 📈 版本历史
+
+### v2.0.8-beta.5 (2026-03-03)
+
+**✨ 新增功能**
+
+- feat: 新增 Token 速度监控插件
+  - 支持流式输出 TPS 实时监控
+  - 可视化控制台输出（颜色等级、进度条）
+  - 支持通过配置文件启用/禁用插件
+  - 5 档速度等级：慢速/中等/快速/极速/超级极速
+
+**🔧 代码重构**
+
+- 将核心模块重构为独立的 npm workspace 包 `@musistudio/llms`
+- 支持通过 pnpm workspace 管理多包项目
 
 ### v2.0.8 (2026-01-07)
 

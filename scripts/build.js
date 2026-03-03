@@ -7,10 +7,13 @@ const fs = require("fs");
 console.log("Building Claude Code Router...");
 
 try {
+  // Build the core package first (contains @musistudio/llms with fixes)
+  console.log("Building core package...");
+  execSync("pnpm --filter @musistudio/llms build", { stdio: "inherit" });
   // Build the main CLI application
   console.log("Building CLI application...");
   execSync(
-    "esbuild src/cli.ts --bundle --platform=node --outfile=dist/cli.js",
+    "esbuild src/cli.ts --bundle --platform=node --target=node20 --outfile=dist/cli.js --external:@musistudio/llms",
     { stdio: "inherit" },
   );
 
