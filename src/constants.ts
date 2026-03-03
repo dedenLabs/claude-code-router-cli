@@ -24,6 +24,17 @@ export const DEFAULT_CONFIG = {
   "APIKEY": "sk-anything",
   "API_TIMEOUT_MS": "600000",
   "PROXY_URL": "",
+  "plugins": [
+    {
+      "name": "token-speed",
+      "enabled": true,
+      "options": {
+        "reporter": [
+          "console"
+        ]
+      }
+    }
+  ],
   "transformers": [
     {
       "name": "",

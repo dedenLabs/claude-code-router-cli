@@ -1,10 +1,30 @@
-// 动态导入 @musistudio/llms
+// 动态导入 @musistudio/llms（本地开发用 npm workspace，生产环境用打包的 core）
 let Server: any;
+const path = require("path");
+
+// 检查是否在 npm 全局安装环境中
+const isNpmGlobal = __dirname.includes("node_modules");
+
+let corePath: string;
+if (isNpmGlobal) {
+  // npm 全局安装：从 packages/core/dist 加载
+  corePath = path.resolve(__dirname, "..", "packages", "core", "dist", "cjs", "server.cjs");
+} else {
+  // 本地开发：从 packages/core/dist 加载
+  corePath = path.resolve(__dirname, "..", "packages", "core", "dist", "cjs", "server.cjs");
+}
+
 try {
-  Server = require("@musistudio/llms").default || require("@musistudio/llms");
+  const coreModule = require(corePath);
+  Server = coreModule.default || coreModule;
 } catch (e: any) {
-  console.error("Failed to load @musistudio/llms:", e.message);
-  process.exit(1);
+  // 回退到尝试 npm 包
+  try {
+    Server = require("@musistudio/llms").default || require("@musistudio/llms");
+  } catch (e2: any) {
+    console.error("Failed to load @musistudio/llms:", e2.message);
+    process.exit(1);
+  }
 }
 
 import { readConfigFile, writeConfigFile, backupConfigFile } from "./utils";

@@ -1,8 +1,8 @@
-# Claude Code Router CLI v2.0.8-beta.5
+# Claude Code Router CLI v2.0.9
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-2.0.8--beta.5-blue.svg)](https://github.com/dedenlabs/claude-code-router-cli)
+[![Version](https://img.shields.io/badge/version-2.0.9-blue.svg)](https://github.com/dedenlabs/claude-code-router-cli)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
@@ -726,7 +726,18 @@ export class MyTransformer extends BaseTransformer {
 
 ## 📈 版本历史
 
-### v2.0.8-beta.5 (2026-03-03)
+### v2.0.9 (2026-03-04)
+
+**🐛 问题修复**
+
+- fix: 移除硬编码版本号，改用 package.json 动态读取
+- fix: 修复 CLI 版本显示不一致的问题
+
+**🔧 代码优化**
+
+- 改进版本加载失败时的错误提示
+
+### v2.0.8 (2026-03-04)
 
 **✨ 新增功能**
 
@@ -740,6 +751,12 @@ export class MyTransformer extends BaseTransformer {
 
 - 将核心模块重构为独立的 npm workspace 包 `@musistudio/llms`
 - 支持通过 pnpm workspace 管理多包项目
+- 修复 CLI 在 npm 全局安装环境下无法加载核心模块的问题
+
+**🐛 问题修复**
+
+- fix: 修复重复 0 tps 日志输出问题
+- fix: 修复 npm 包发布时缺少 packages/core/dist 的问题
 
 ### v2.0.8 (2026-01-07)
 

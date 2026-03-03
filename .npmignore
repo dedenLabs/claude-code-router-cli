@@ -14,3 +14,9 @@ blog
 config.json
 ui
 scripts
+packages/core/src
+packages/core/tsconfig.json
+packages/core/package.json
+packages/core/scripts
+packages/core/.npmignore
+packages/core/pnpm-lock.yaml
